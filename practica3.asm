@@ -18,7 +18,7 @@ dB 1Ah,37h,01h,28h,05h,12h
 ;0202 0203 <- N2
 ;0204 0205 <- N3
 
-	.org 0100h
+.org 0100h
 		LXI H,0200h;Carga el puntero apuntando al primer dato
 		MOV A,M;	Carga la parte alta del dato 1 AL ACUMULADOR
 
