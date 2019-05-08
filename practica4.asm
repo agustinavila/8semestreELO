@@ -13,3 +13,21 @@
 ;representa el semiperiodo, este valor ASCII debe convertirse a binario.
 ;El programa principal deberá mostrar por display los segundos transcurridos.
 ;*******************************************************************************
+
+;le entra una interrupcion por segundo
+;En cada interrupcion debe incrementar un contador
+;o mejor dicho tres:
+;uno que cuente hasta 2 y se reinicie (cada 2seg cambiar el estado)
+;uno que cuente inicialmente hasta 3, pero que se pueda modificar con un interrupt
+;es decir, deberia tener el valor 3 en un registro, y que el interrupt sobreescriba el valor
+
+;funciones que deberia tener:
+;rst que incremente los contadores
+;normalmente tiene que estar chequeando el valor e invirtiendolo
+;rst que lea el valor del teclado (de menor prioridad que el temporal)
+
+;variables: estado de puertas - pueden estar en un solo registro(dificil de operar) o en dos(creo que es lo mejor), o en cuatro (innecesario)
+;8 bits: estado 1, estado 2, contador 1, contador 1, contador 2(resto de los 4)
+
+;contadores de puertas
+;mostrar valor de tiempo actual
