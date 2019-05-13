@@ -29,51 +29,97 @@
 	MVI M, 03H;
 	INR L;
 	MVI M, 04H;
+	MVI L, 00H; LO VUELVE A APUNTAR AL PRIMER DATO
 
 ;-------------------------------------------
 ;Inicializacion de la alarma
 ;-------------------------------------------
 
 ;el bit 0 esta en 1 (PA salida), el bit 1 esta en 1 (PB salida)
-;en el bit 0 de la puerta b esta el buzzer
+;en el bit 0 de la puerta b(72H) esta el buzzer
 ;en el puerto A esta el lcd
 ;en la entrada 82h esta el teclado, escribe el nible bajo
 
 	MVI	A,03H	 ;CONFIG 8155  
 	OUT	70H	 ;BIT 0 = 1(escribo registro comando estado)
 	CALL	INIC	 ;INICIALIZO LCD
-
+	LXI D, 0004H;		EN D ESTA EL ESTADO (ON/OFF) Y EN E ESTA EL CONTADOR DE LA CONTRASEÑA
+	;B CREO QUE LO USA EL LCD
+	;C LO USA EL LECTOR DE ZONA PARA MANTENER UNA COPIA
+	;D INDICA EL ESTADO ACTUAL
+	;E SE UTILIZA PARA CONTROLAR LA CONTRASEÑA
+BUCLE:
+	MOV A,D; TRAE EL REGISTRO DE ESTADO AL AC
+	CNZ LEERZONA;	SI LA ALARMA ESTA ACTIVADA, LEE LA ZONA
+	;SUPONIENDO QUE LA ENTRADA DE TECLADO  ES POR INTERRUPCION NO TIENE QUE LEER TECLADO ACA
+	JMP BUCLE;
 
 ;FUNCIONAMIENTO:
 ;La alarma llama a tecla1, ese valor lo guarda en el acumulador
-;Si es igual al primer digito de la alarma (lo compara con un registro)
+;Si es igual al primer digito de la alarma (lo compara con un LUGAR DE MEMORIA)
 ;incrementa el RP H, carga en el registro de comparacion el siguiente bit, 
-;decrementa un contador (en otro registro) y vuelve a llamar a tecla1.
+;decrementa un contador (en registro D) y vuelve a llamar a tecla1.
 ;Si no es el bit indicado, reinicia el ciclo (reinicia contador, reinicia lugar en memoria y recarga digito)
 ;Si es correcto el numero ingresado 4 veces seguidas, la alarma cambia de estado
 ;On/off. Mientras esté en off, la alarma no sensa las zonas.
 ;Cuando esta en on, censa las zonas y las muestra por display.
 
-;Rutinas: 1) comparar numero ingresado
-;		2) ingreso erroneo
-;		3) cambio de estado
-;		4) censado de zonas
 
 ;		El teclado deberia entrar por interrupciones cosa de que mientras censa las zonas pueda leer el teclado
 
+;FORMAS POSIBLES DE EJECUTAR EL INGRESO POR TECLADO:
+;1: SIN INTERRUPCIONES:
+;CARGA EN UN REGISTRO EL VALOR, LLAMA A TECLA1, ESPERA QUE DEVUELVA UN VALOR
+;COMPARA, SI ES VALIDO CARGA EL SIGUIENTE Y LLAMA A TECLA1
+;SI NO ES VALIDO, RECARGA EL VALOR Y VUELVE A TECLA1;
+;PROBLEMA: CUANDO LA ALARMA ESTA DESACTIVADA ANDA BIEN, PERO CON LA ALARMA ACTIVADA DEJA DE LEER SENSORES
+
+;2: EL TECLADO TIENE INTERRUPCIONES, Y CADA VEZ QUE SE PRESIONA UNA TECLA SE LEE EL TECLADO (TECLA2?)
+;EN LA SUBRUTINA HACE LA COMPARACION, CARGA NUEVOS VALORES, ETC
 
 
 
 
+CAMBIOESTADO:			;SE INVOCA ESTA RUTINA CUANDO SE INGRESA CORRECTAMENTE LA CONTRASEÑA
+						;LO UNICO QUE HACE ES ACTUALIZAR EL LCD
+						;Y EL REGISTRO QUE INDICA ACTIVA/DESACTIVA (REG D)
+	PUSH PSW
+	MVI L, 00H;			REINICIA PARA LA CONTRASEÑA
+	MVI E, 04H;
+	XRA A;				PONE EL ACUMULADOR EN 0
+	CMP D;				COMPARA CON EL ESTADO ACTUAL
+	JZ ACTIVA;			SI EL ESTADO ACTUAL ES CERO, ACTIZA LA ALARMA
+	MVI D, 00H;			SI NO, LA DESACTIVA
+	CALL DESACT;		ESCRIBE EN EL LCD QUE LA ALARMA ESTA DESACT
+	POP PSW
+	RET;
+ACTIVA:
+	MVI D, FFH;
+	CALL ACT;			ESCRIBE EN EL LCD QUE LA ALARMA ESTA ACTIVA
+	POP PSW;
+	RET;
 
 
+LEERTECLA:
+	CALL TECLA1; 		INDISTINTO, CARGA EL VALOR
+	CMP M;
+	JZ SIGUIENTE; 		SI ES IGUAL, LO ACEPTA Y CARGA EL SIGUIENTE
+	MVI L, 00H;			SI NO ES IGUAL AL QUE CORRESPONDE VUELVE AL INICIO
+	MVI E, 04H;			REINICIA EL CONTADOR
+	RET;
+SIGUIENTE:
+	INR L;				CARGA EL SIGUIENTE DIGITO DE LA CONTRASEÑA
+	DCR E;				SUPONIENDO EN QUE EN E TENGO EL CONTADOR
+	CZ CAMBIOESTADO;
+	RET;
 
-LEERZONA: ;Rutina que lee los sensores, activa el buzzer y manda al display la zona
+
+LEERZONA: 				;Rutina que lee los sensores, activa el buzzer y manda al display la zona
 	IN 84H;
-	MOV C,A; GUARDA UNA COPIA DE LA LECTURA EN C
-	ANI 08H;
-	JNZ ACTCUATRO;
-	MOV A,C;
+	MOV C,A; 			GUARDA UNA COPIA DE LA LECTURA EN C
+	ANI 08H;			VA ENMASCARANDO BIT A BIT, CON PRIORIDAD A LA ZONA 4
+	JNZ ACTCUATRO;		EN EL MOMENTO QUE ENCUENTRA UNA ZONA ACTIVA, LA ESCRIBE EN PANTALLA
+	MOV A,C;			Y ACTIVA EL BUZZER
 	ANI 04H;
 	JNZ ACTRES;
 	MOV A,C;
@@ -81,43 +127,51 @@ LEERZONA: ;Rutina que lee los sensores, activa el buzzer y manda al display la z
 	JNZ ACTDOS;
 	MOV A,C;
 	JNZ ACTUNO;
-	CALL BUZZEROFF;
+	CALL ACT;			SI NINGUN SENSOR ESTA ACTIVO, SOLO DICE "ACT" (REPOSO)
+	CALL BUZZEROFF;		Y APAGA EL BUZZER
 	RET;
 ACTCUATRO:
-	MVI B, 04H;
+	MVI B, 34H;
 	CALL ZONA;
 	CALL BUZZER;
 	RET;
 ACTRES:
-	MVI B, 03H;
+	MVI B, 33H;
 	CALL ZONA;
 	CALL BUZZER;
 	RET;
 ACTDOS:
-	MVI B, 02H;
+	MVI B, 32H;
 	CALL ZONA;
 	CALL BUZZER;
 	RET;
 ACTUNO:
-	MVI B, 01H;
+	MVI B, 31H;
 	CALL ZONA;
 	CALL BUZZER;
 	RET;
 
 
-BUZZER:
-	PUSH PSW; GUARDA EL ACUMULADOR
-	MVI A, 01H; PONE EN 1 EL BIT DEL BUZZER
-	OUT 72H;	LO SACA POR LA PUERTA B DEL 8155
-	POP PSW; LO RECUPERA
+
+BUZZER:					;RUTINA QUE ENCIENDE EL BUZZER
+	PUSH PSW; 			GUARDA EL ACUMULADOR
+	MVI A, 01H; 		PONE EN 1 EL BIT DEL BUZZER
+	OUT 72H;			LO SACA POR LA PUERTA B DEL 8155
+	POP PSW; 			LO RECUPERA
 	RET;
 
-BUZZEROFF:
-	PUSH PSW; GUARDA EL ACUMULADOR
-	MVI A, 00H; PONE EN 0 EL BIT DEL BUZZER
-	OUT 72H;	LO SACA POR LA PUERTA B DEL 8155
-	POP PSW; LO RECUPERA
+
+BUZZEROFF:				;RUTINA QUE APAGA EL BUZZER
+	PUSH PSW; 			GUARDA EL ACUMULADOR
+	MVI A, 00H; 		PONE EN 0 EL BIT DEL BUZZER
+	OUT 72H;			LO SACA POR LA PUERTA B DEL 8155
+	POP PSW; 			LO RECUPERA
 	RET;
+
+
+
+
+
 
 
 
@@ -185,6 +239,13 @@ ZONA:
 	RET;
 
 	
+
+
+
+
+
+
+
 
 ;-----------------------------------
 ;De aca para abajo, rutinas del lcd:
