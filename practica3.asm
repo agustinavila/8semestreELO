@@ -1,422 +1,221 @@
-;*******************************************************************************
-;se debe realizar un teclado de alarma con cuatro zonas basado en el 8085.
-;El sistema posee las siguientes interfaces:
-;a) 1 teclado
-;b) 4 interruptores de entrada de zonas de sensado
-;c) 1 display lcd.
+;************************************************************************************
+; en memoria se encuentran almacenados tres datos:
+; dato 1: binario MyS 13b total
+; dato 2: BCD 12b + 1b Signo SRC10
+; dato 3: SRC2 12b
 ;
-; Funcionamiento del sistema:
-;Con el teclado se ingresa la clave (cuatro digitos) para activar y desactivar la alarma.
-;Al estar activada se debe monitorear las zonas. Por display LCD se debe mostrar los
-;estados de la alarma: "Act", "Desact" y "Zona X act".
-;Las direcciones de los dispositivos seran asignadas de acuerdo a la siguiente tabla:
-;Teclado ->	Teclado (in 82h)
-;Interruptores de sensores de zona -> puerta 84H, bits 3-0
-; Buzzer -> Puerta B (de un 8155)
-;*******************************************************************************
-
-	;.org 2000h
-	TECLA1	 EQU 09B3H
-	LCD_DATA EQU 1500H
-	LXI SP,17FFh ; SP EN 17FFH
-
-;GUARDO LA CONTRASEÑA EN MEMORIA:
-	LXI	H, 3000H
-	MVI M, 01H;
-	INR L;
-	MVI M, 02H;
-	INR L;
-	MVI M, 03H;
-	INR L;
-	MVI M, 04H;
-	MVI L, 00H; LO VUELVE A APUNTAR AL PRIMER DATO
-
-;-------------------------------------------
-;Inicializacion de la alarma
-;-------------------------------------------
-
-;el bit 0 esta en 1 (PA salida), el bit 1 esta en 1 (PB salida)
-;en el bit 0 de la puerta b(72H) esta el buzzer
-;en el puerto A esta el lcd
-;en la entrada 82h esta el teclado, escribe el nible bajo
-
-	MVI	A,03H	 ;CONFIG 8155  
-	OUT	70H	 ;BIT 0 = 1(escribo registro comando estado)
-	CALL	INIC	 ;INICIALIZO LCD
-	LXI D, 0004H;		EN D ESTA EL ESTADO (ON/OFF) Y EN E ESTA EL CONTADOR DE LA CONTRASEÑA
-	;B CREO QUE LO USA EL LCD
-	;C LO USA EL LECTOR DE ZONA PARA MANTENER UNA COPIA
-	;D INDICA EL ESTADO ACTUAL
-	;E SE UTILIZA PARA CONTROLAR LA CONTRASEÑA
-BUCLE:
-	MOV A,D; TRAE EL REGISTRO DE ESTADO AL AC
-	CNZ LEERZONA;	SI LA ALARMA ESTA ACTIVADA, LEE LA ZONA
-	;SUPONIENDO QUE LA ENTRADA DE TECLADO  ES POR INTERRUPCION NO TIENE QUE LEER TECLADO ACA
-	JMP BUCLE;
-
-;FUNCIONAMIENTO:
-;La alarma llama a tecla1, ese valor lo guarda en el acumulador
-;Si es igual al primer digito de la alarma (lo compara con un LUGAR DE MEMORIA)
-;incrementa el RP H, carga en el registro de comparacion el siguiente bit, 
-;decrementa un contador (en registro D) y vuelve a llamar a tecla1.
-;Si no es el bit indicado, reinicia el ciclo (reinicia contador, reinicia lugar en memoria y recarga digito)
-;Si es correcto el numero ingresado 4 veces seguidas, la alarma cambia de estado
-;On/off. Mientras esté en off, la alarma no sensa las zonas.
-;Cuando esta en on, censa las zonas y las muestra por display.
-
-
-;		El teclado deberia entrar por interrupciones cosa de que mientras censa las zonas pueda leer el teclado
-
-;FORMAS POSIBLES DE EJECUTAR EL INGRESO POR TECLADO:
-;1: SIN INTERRUPCIONES:
-;CARGA EN UN REGISTRO EL VALOR, LLAMA A TECLA1, ESPERA QUE DEVUELVA UN VALOR
-;COMPARA, SI ES VALIDO CARGA EL SIGUIENTE Y LLAMA A TECLA1
-;SI NO ES VALIDO, RECARGA EL VALOR Y VUELVE A TECLA1;
-;PROBLEMA: CUANDO LA ALARMA ESTA DESACTIVADA ANDA BIEN, PERO CON LA ALARMA ACTIVADA DEJA DE LEER SENSORES
-
-;2: EL TECLADO TIENE INTERRUPCIONES, Y CADA VEZ QUE SE PRESIONA UNA TECLA SE LEE EL TECLADO (TECLA2?)
-;EN LA SUBRUTINA HACE LA COMPARACION, CARGA NUEVOS VALORES, ETC
-
-
-
-
-CAMBIOESTADO:			;SE INVOCA ESTA RUTINA CUANDO SE INGRESA CORRECTAMENTE LA CONTRASEÑA
-						;LO UNICO QUE HACE ES ACTUALIZAR EL LCD
-						;Y EL REGISTRO QUE INDICA ACTIVA/DESACTIVA (REG D)
-	PUSH PSW
-	MVI L, 00H;			REINICIA PARA LA CONTRASEÑA
-	MVI E, 04H;
-	XRA A;				PONE EL ACUMULADOR EN 0
-	CMP D;				COMPARA CON EL ESTADO ACTUAL
-	JZ ACTIVA;			SI EL ESTADO ACTUAL ES CERO, ACTIZA LA ALARMA
-	MVI D, 00H;			SI NO, LA DESACTIVA
-	CALL DESACT;		ESCRIBE EN EL LCD QUE LA ALARMA ESTA DESACT
-	POP PSW
-	RET;
-ACTIVA:
-	MVI D, 0FFH;
-	CALL ACT;			ESCRIBE EN EL LCD QUE LA ALARMA ESTA ACTIVA
-	POP PSW;
-	RET;
-
-
-LEERTECLA:
-	CALL TECLA1; 		INDISTINTO, CARGA EL VALOR
-	CMP M;
-	JZ SIGUIENTE; 		SI ES IGUAL, LO ACEPTA Y CARGA EL SIGUIENTE
-	MVI L, 00H;			SI NO ES IGUAL AL QUE CORRESPONDE VUELVE AL INICIO
-	MVI E, 04H;			REINICIA EL CONTADOR
-	RET;
-SIGUIENTE:
-	INR L;				CARGA EL SIGUIENTE DIGITO DE LA CONTRASEÑA
-	DCR E;				SUPONIENDO EN QUE EN E TENGO EL CONTADOR
-	CZ CAMBIOESTADO;
-	RET;
-
-
-LEERZONA: 				;Rutina que lee los sensores, activa el buzzer y manda al display la zona
-	IN 84H;
-	MOV C,A; 			GUARDA UNA COPIA DE LA LECTURA EN C
-	ANI 08H;			VA ENMASCARANDO BIT A BIT, CON PRIORIDAD A LA ZONA 4
-	JNZ ACTCUATRO;		EN EL MOMENTO QUE ENCUENTRA UNA ZONA ACTIVA, LA ESCRIBE EN PANTALLA
-	MOV A,C;			Y ACTIVA EL BUZZER
-	ANI 04H;
-	JNZ ACTRES;
-	MOV A,C;
-	ANI 02H;
-	JNZ ACTDOS;
-	MOV A,C;
-	JNZ ACTUNO;
-	CALL ACT;			SI NINGUN SENSOR ESTA ACTIVO, SOLO DICE "ACT" (REPOSO)
-	CALL BUZZEROFF;		Y APAGA EL BUZZER
-	RET;
-ACTCUATRO:
-	MVI B, 04H;
-	CALL ZONA;
-	CALL BUZZER;
-	RET;
-ACTRES:
-	MVI B, 03H;
-	CALL ZONA;
-	CALL BUZZER;
-	RET;
-ACTDOS:
-	MVI B, 02H;
-	CALL ZONA;
-	CALL BUZZER;
-	RET;
-ACTUNO:
-	MVI B, 01H;
-	CALL ZONA;
-	CALL BUZZER;
-	RET;
-
-
-
-BUZZER:					;RUTINA QUE ENCIENDE EL BUZZER
-	PUSH PSW; 			GUARDA EL ACUMULADOR
-	MVI A, 01H; 		PONE EN 1 EL BIT DEL BUZZER
-	OUT 72H;			LO SACA POR LA PUERTA B DEL 8155
-	POP PSW; 			LO RECUPERA
-	RET;
-
-
-BUZZEROFF:				;RUTINA QUE APAGA EL BUZZER
-	PUSH PSW; 			GUARDA EL ACUMULADOR
-	MVI A, 00H; 		PONE EN 0 EL BIT DEL BUZZER
-	OUT 72H;			LO SACA POR LA PUERTA B DEL 8155
-	POP PSW; 			LO RECUPERA
-	RET;
-
-
-
-
-
-
-
-
-;-------------------------------------------
-;Rutinas de cambio de estado de la alarma
-;-------------------------------------------
-
-ACT:
-	PUSH PSW
-	MVI A, 01H
-	CALL COMANDO;
-	MVI A, 40H;	ASCII "A"
-	CALL INFO;
-	MVI A, 63H; ASCII "c"
-	CALL INFO;
-	MVI A, 74H; ASCII "t"
-	CALL INFO;
-	POP PSW
-	RET;
-
-DESACT:
-	PUSH PSW
-	MVI A, 01H
-	CALL COMANDO;
-	MVI A, 44H;	ASCII "D"
-	CALL INFO;
-	MVI A, 65H; ASCII "e"
-	CALL INFO;
-	MVI A, 73H; ASCII "s"
-	CALL INFO;
-	MVI A, 61H;	ASCII "a"
-	CALL INFO;
-	MVI A, 63H; ASCII "c"
-	CALL INFO;
-	MVI A, 74H; ASCII "t"
-	CALL INFO;
-	POP PSW
-	RET;
-
-ZONA:
-	PUSH PSW
-	MVI A, 01H
-	CALL COMANDO;
-	MVI A, 5AH;	ASCII "Z"
-	CALL INFO;
-	MVI A, 6FH; ASCII "o"
-	CALL INFO;
-	MVI A, 64H; ASCII "n"
-	CALL INFO;
-	MVI A, 61H;	ASCII "a"
-	CALL INFO;
-	MVI A, 20H;	ASCII " "
-	CALL INFO;
-	MOV A,B; TRAE EL REGISTRO CON LA ZONA QUE SE ACTIVO AL ACUMULADOR
-	CALL INFO;
-	MVI A, 20H; ASCII " "
-	CALL INFO;
-	MVI A, 61H;	ASCII "a"
-	CALL INFO;
-	MVI A, 63H; ASCII "c"
-	CALL INFO;
-	MVI A, 74H; ASCII "t"
-	CALL INFO;
-	POP PSW
-	RET;
-
-	
-
-
-
-
-
-
-
-
-;-----------------------------------
-;De aca para abajo, rutinas del lcd:
-;-----------------------------------
-
-INIC:	
-	MVI	A,00H
-	OUT	71H; Supongo que es el puerto A del 8155
-
-	CALL	D_LCD
-	CALL	D_LCD
-	CALL	D_LCD
-	CALL	D_LCD
-	
-	MVI	A,30H
-	CALL	DATA
-	CALL	D_LCD			
-
-	MVI	A,30H
-	CALL	DATA
-	CALL	D_LCD			
-
-	MVI	A,030H
-	CALL	DATA
-	CALL	D_LCD			
-
-	;;;;;;;;;;;;;
-
-	MVI	A,20H
-	CALL	DATA
-	CALL	D_LCD			
-
-	MVI	A,20H
-	CALL	DATA
-	CALL	D_LCD			
-	
-	MVI	A,80H
-	CALL	DATA
-	CALL	D_LCD			
-
-	MVI	A,00H
-	CALL	DATA
-	CALL	D_LCD
-
-	MVI	A,80H
-	CALL	DATA
-	CALL	D_LCD	
-
-	MVI	A,00H
-	CALL	DATA
-	CALL	D_LCD			
-		
-	MVI	A,0F0H
-	CALL	DATA
-	CALL	D_LCD	
-
-	MVI	A,00H
-	CALL	DATA
-	CALL	D_LCD			
-	
-	MVI	A,60H
-	CALL	DATA
-	CALL	D_LCD	
-
-	MVI	A,00H
-	CALL	DATA
-	CALL	D_LCD			
-
-	MVI	A,10H
-	CALL	DATA
-	CALL	D_LCD
-
-	MVI	A,00H
-	CALL	DATA
-	CALL	D_LCD			
-
-	MVI	A,20H
-	CALL	DATA
-	CALL	D_LCD			
-	
-	RET		
-		
-
-			
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;; DELAY LCD ;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-D_LCD:
-		MVI D,00H
-V1:		DCR D
-		JNZ V1		
-		RET
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;; ESCRIBIR COMANDO ;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-DATA:		
-	ANI	0F0H
-	ADI	08H
-	OUT	71H
-	NOP
-	NOP
-	ANI	0F0H
-	OUT	71H
-	RET
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;; ESCRIBIR DATO ;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-INFO:	
-	STA	LCD_DATA
-	ANI	0F0H
-	ADI	0CH
-	OUT	71H
-	NOP
-	NOP
-	ANI	0F0H
-	ADI	04H
-	OUT	71H
-
-	LDA	LCD_DATA
-	RLC
-	RLC
-	RLC
-	RLC
-	ANI	0F0H
-	ADI	0CH
-	OUT	71H
-	NOP
-	NOP
-	ANI	0F0H
-	OUT	71H
-
-	RET
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;; COMANDO ;;;;;;;;;;;
-; 8X -> 1ra FILA - X COLUMNA ;
-; CX -> 2da FILA - X COLUMNA ;
-; 01 -> LIMPIA DISPLAY       ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-COMANDO:
-	STA	LCD_DATA
-	ANI	0F0H
-	ADI	08H
-	OUT	71H
-	NOP
-	NOP
-	ANI	0F0H
-	ADI	04H
-	OUT	71H
-
-	LDA	LCD_DATA
-	RLC
-	RLC
-	RLC
-	RLC
-	ANI	0F0H
-	ADI	08H
-	OUT	71H
-	NOP
-	NOP
-	ANI	0F0H
-	OUT	71H
-
-	RET
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Se debe encontrar el mayor y verificar si se puede representar en SRC2 8b
+; se deben llevar 3 ejemplos que verifiquen  desbordes, con num positivos y negativos.
+;************************************************************************************
+
+.data 0200h
+dB 1Ah,37h,01h,28h,05h,12h
+;  N1H,N1L,N2H,N2L,N3H,N3L
+;numero 1: xxxS MMMM MMMM MMMM 	<- parte alta y despues parte baja
+;numero 2: xxxS CCCC DDDD UUUU	<- parte alta y despues parte baja
+;numero 3: xxxx MMMM MMMM MMMM	<- parte alta y etc.
+;0200 0201 <- N1
+;0202 0203 <- N2
+;0204 0205 <- N3
+
+.org 0100h
+		LXI H,0200h;Carga el puntero apuntando al primer dato
+		MOV A,M;	Carga la parte alta del dato 1 AL ACUMULADOR
+
+;convertir numero 1 a src2
+		ANI 10H; 	enmascara el bit de signo
+		MOV B,M; 	y guarda la parte alta en el registro b
+		INX H;		apunta a la parte baja del dato
+		MOV C, M;
+		JZ pos1; 	si el numero es positivo evita esta parte
+		; en este momento tenemos en BC el dato entero
+		MOV A,B;	TRAE LA PARTE ALTA CON EL BIT DE SIGNO
+		ANI 0FH;	ENMASCARA EL BIT DE SIGNO
+		MOV B,A;	LO GUARDA EN B
+		ORI FFH; 	CARGA EL ACUMULADOR CON FF
+		SUB C; 		a ff le resta la parte baja
+		INR A; 		le suma 1 para que sea complemento a la base
+		MOV C,A; 	guarda la parte baja del complemento
+		ORI FFH; 	vuelvo a ponerlo en ff
+		SBB B; 		LE RESTA A LA PARTE BAJA FF con carry
+		MOV B, A; 	Guarda el dato en B
+pos1:	MVI L, 10h; Carga el puntero con la direccion 0210h
+		MOV M, B; 	guarda la parte alta del n1 en 0210h
+		INR L;
+		MOV M, C; 	guarda la parte baja en 0211h
+
+;queda guardado el dato 1 convertido en 0210 y 0211 como src2 16bits
+;a partir de aca empieza a convertir el segundo dato:	
+
+		MVI L, 02H; carga el puntero con 0202, donde esta la parte alta del segundo dato
+		MOV A, M; 	trae la parte alta
+		MOV B,M;	trae la parte alta al reg b
+		INX H;		incrementa el puntero
+		MOV C,M;	trae la parte baja al reg c
+		ANI 10H;	enmascara el bit de signo
+		JZ CONV2;	si es cero no lo complementa
+		MVI A,09H;	carga el acumulador con 99 para complementar
+		SUB B;		le resta b (obtiene el complemento)
+		ANI 0FH;	SE ASEGURA DE TENER SOLO LA CENTENA	
+		MOV B, A;	guarda el resultado en b
+		MVI A,99H;	repite lo mismo para c
+		SUB C;
+		ADI 01H;	a la parte baja le suma 1
+		DAA;		AJUSTA DECIMAL
+		MOV C,A;	guarda la parte baja en c	
+		MOV A,B;	trae la parte alta al acumulador
+		ACI 00H;	le suma si hay algun carry de la parte baja
+		DAA;		ESTO NO DEBERIA SER NECESARIO	
+		MOV B,A;	lo guarda de vuelta en b
+CONV2:	MVI L,21H;	PONE EL PUNTERO EN LA PARTE BAJA DEL DATO CONVERTIDO
+		MOV A,B;	TRAE LA PARTE BAJA AL ACUMULADOR
+		RAL;		ROTA LA CENTENA (X2)
+		RAL;		ROTA LA CENTENA	(X4)
+		MOV D,A; 	X4 GUARDADO EN D
+		RAL;		X8
+		RAL;		X16
+		RAL;		X32(PARTE BAJA) CON UN BIT EN EL CARRY
+		MOV E,A;	GUARDO EL BIT BAJO EN E (X32)
+		MVI A,00H;	PONGO EL ACUMULADOR EN 0
+		RAL;		LE METE EL BIT QUE ESTABA EN EL CARRY
+		MOV M,A;	GUARDA ESTA PARTE ALTA EN M
+		MOV A,E;	TRAE DE VUELTA LA PARTE BAJA
+		RAL;		(X64)
+		ADD D;		+(X32)
+		ADD E;		+(X4)
+		MOV E,A;	GUARDO LA PARTE BAJA EN E
+		MOV A,M;	TRAIGO LA PARTE ALTA
+		ACI 00H;	LE SUMO SI HUBO CARRY
+		MOV D,A;	LO GUARDO EN D
+		MOV A,B;	TRAIGO EL DATO ORIGINAL
+		RAR;		LO ROTO DOS VECES PARA OBTENER
+		RAR;		LA PARTE ALTA DEL X64
+		ANI 0FH;	ENMASCARO LOS 4 BITS BAJOS PARA EVITAR QUE SE METAN DATOS AL ROTAR
+		ADD D;		LE SUMO LA PARTE ALTA
+		MOV D,A;	LO GUARDO EN D
+
+;EN ESTE MOMENTO ESTARIA EL DATO DE LAS CENTENAS EN EL REG PAR "DE"
+
+		MOV A,C;	TRAE LA PARTE BAJA AL ACUMULADOR
+		ANI F0H;	ENMASCARA LAS DECENAS
+		RAR;		TENGO LAS DECENAS X8
+		MOV B,A;	GUARDO ESO EN C
+		RAR;		DECENAS X4
+		RAR;		DECENAS X2
+		ADD B;		LE SUMO LAS DECENAS X8
+		MOV B,A;	GUARDO EL DATO EN B
+		MOV A,C;	TRAIGO DE VUELTA LA PARTE BAJA
+		ANI 0FH;	ENMASCARO LAS UNIDADES
+		ADD B;		SUMO UNIDADES Y DECENAS
+		ADD E;		SUMO PARTE BAJA DE CENTENAS
+		MOV C,A;	GUARDO ESO EN C
+		MOV A,D;	TRAIGO LA PARTE ALTA
+		ACI 00H;	LE SUMO SI HAY CARRY;
+		MOV B,A;	GUARDO LA PARTE ALTA EN B
+
+;EN ESTE MOMENTO TENGO EL BCD (UNSIGNED) CONVERTIDO A BINARIO UNSIGNED
+;A CONTINUACION TENGO QUE VER EL BIT DE SIGNO PARA VER SI COMPLEMENTO O NO
+
+		MVI L, 02H;		VUELVO EL PUNTERO A LA PARTE ALTA
+		MOV A,M;	TRAIGO EL DATO
+		ANI 10H;		ENMASCARO EL BIT DE SIGNO
+		JZ POS2;	SI ES POSITIVO EVITA LA CONVERSION
+		ORI FFH; 	CARGA EL ACUMULADOR CON FF
+		SUB C; 		a ff le resta la parte baja
+		INR A; 		le suma 1 para que sea complemento a la base
+		MOV C,A; 	guarda la parte baja del complemento
+		ORI FFH; 	vuelvo a ponerlo en ff
+		SBB B; 		LE RESTA A LA PARTE BAJA FF con carry
+		MOV B, A; 	Guarda el dato en B
+POS2:	MVI L, 20h; Carga el puntero con la direccion 0220h
+		MOV M, B; 	guarda la parte alta del n1 en 0220h
+		INR L;
+		MOV M, C; 	guarda la parte baja en 0221h
+
+;EN ESTE MOMENTO TENEMOS GUARDADO EN MEMORIA:
+;DATO 1 CONVERTIDO A SRC2 EN 0210 Y 0211
+;DATO 2 CONVERTIDO A SRC2 EN 0220 Y 0221
+
+;EL TERCER DATO SE EXPANDE PARA QUE SEA DE 16 BITS
+
+		MVI L, 04H;	SE CARGA EL PUNTERO A LA PARTE ALTA DEL DATO
+		MOV A, M;	SE TRAE EL DATO AL ACUMULADOR
+		ANI 08H;	ESTE DATO ES DE 12BITS, ASI QUE SE VE EL B3
+		JZ CEROS;
+		MOV A, M;
+		ORI F0H;	PONE LOS 4BITS EXTRA EN 1
+		JMP LISTO;
+CEROS:	MOV A,M;
+		ANI 0FH;	SE PONEN LOS 4 BITS EN 0
+LISTO:	INR L;
+		MOV C,M;
+		MVI L,30H;	SE PONE EL PUNTERO EN 0230H
+		MOV M,A;	GUARDA LA PARTE ALTA EN 0230
+		INR L;
+		MOV M,C;	SE GUARDA LA PARTE BAJA EN 0231
+
+;EN ESTE PUNTO ESTAN TODOS LOS DATOS EN 16BIT SRC2
+;DATO 1 CONVERTIDO A SRC2 EN 0210 Y 0211
+;DATO 2 CONVERTIDO A SRC2 EN 0220 Y 0221
+;DATO 3 EXPANDIDO EN 16BIT   0230 Y 0231
+
+		MVI L, 10H;	APUNTA A D2H
+		MOV B,M;	LO CARGA EN B
+		INR L;
+		MOV C,M;	CARGA EL DATO 1 EN BC
+		MVI L, 20H;	APUNTA A D2H
+		CALL COMPARAR;
+		MVI L, 30H;
+		CALL COMPARAR;
+
+;termina de comparar, resta ver si se puede guardar en un byte:
+
+		MOV A,C;	TRAE LA PARTE BAJA DEL DATO
+		ANI 80H;	COMPRUEBA EL BIT DE SIGNO
+		JZ CERO;	SI ES CERO, COMPRUEBA QUE LOS DEMAS SEAN CERO
+		MOV A,B;
+		XRI FFH;	COMPARA QUE SEAN TODOS FF SI EL BIT 7 ES 1
+		JZ EXITO;
+		JMP FRACA;
+CERO:	XRA B;		EL ACUMULADOR ESTA EN CERO, XOR B, DEBERIAN SER TODOS CERO
+		JZ EXITO;
+		JNZ FRACA;
+
+EXITO:	ORI FFH;
+		OUT 00H;
+		JMP FIN;
+FRACA:	ANI 00H;
+		OUT 00H;
+FIN:	HLT;
+
+
+;A continuacion, la subrutina que compara dos datos de 16bit,
+;estando un dato en el RP BC y el otro dato apuntado por HL
+
+COMPARAR:MOV A,M;	TRAE LA PARTE ALTA DE LA MEMORIA
+		XRA B;		OR EXCLUSIVA CON B, SI SON IGUALES DA 0
+		JZ BAJAS;	SI SON IGUALES SALTA A COMPARAR LAS PARTES BAJAS
+		ANI 80H;	SE ENMASCARA EL MSB
+		MOV A,M;	TRAE DE VUELTA EL DATO
+		JNZ DIST; 	SI SON DE DISTINTO SIGNO SALTA A ESA PARTE
+		CMP B;		EN B ESTA EL SEGUNDO DATO(PARTE ALTA)
+		JNC D2M;	SALTA SI D2>D1( es decir que d2-d1 no da carry)
+		RET;		D1 ES MAYOR
+BAJAS:	INR L;		APUNTA A D2L
+		MOV A,M;	LO TRAE AL ACUMULADOR
+		CMP C;		HACE D2L - D1L
+		MOV A,B;
+		JNC D2L;	SI NO HAY CARRY D2L ES MAYOR O IGUAL QUE D1L
+		ANI 80H;	MIRA EL BIT DE SIGNO
+		JNZ D2M;	SI ES UNO, SON NUMOERO NEGATIVOS, ENTONCES D1 ES MENOR
+		RET;		SI NO, D1 ES MAYOR
+D2L:	ANI 80H;	MIRA EL BIT DE SIGNO
+		JZ D2M;		SI ES 0, SON POSITIVOS Y D2 ES MAYOR
+		RET;		SI NO, D1 ES MAYOR
+DIST:	ANI 80H;	ENMASCARA EL BIT DE SIGNO
+		JZ D2M;		SI EL BIT DE SIGNO ES 0, ENTONCES D2 ES MAS GRANDE
+		RET;		SI
+D2M:	MOV B,M;	TRAE LA PARTE ALTA DE D1 A B
+		INR L;
+		MOV C,M;	Y LA PARTE BAJA A C
+		RET;
