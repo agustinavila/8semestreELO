@@ -13,21 +13,33 @@
 ;representa el semiperiodo, este valor ASCII debe convertirse a binario.
 ;El programa principal deberá mostrar por display los segundos transcurridos.
 ;*******************************************************************************
+.org 002CH; RS 5.5
+;RUTINA DEL TECLADO
+PUSH PSW;
+;se supone que el teclado esta conectado en el SA en la direccion 84h
+IN 84H;leer dato
+ANI 0FH;enmascarar nible bajo
+MOV B,A;guardarlo en el registro
+MVI C, 00H; REINICIA EL CONTADOR DEL PERIODO ACTUAL PARA EVITAR ERRORES
+OUT 20H; SUPONIENDO QUE EN 20H ESTA EL FF DE RESET DE LA INTERRUPCION
+POP PSW;
+EI
+RET
 
-;le entra una interrupcion por segundo
-;En cada interrupcion debe incrementar un contador
-;o mejor dicho tres:
-;uno que cuente hasta 2 y se reinicie (cada 2seg cambiar el estado)
-;uno que cuente inicialmente hasta 3, pero que se pueda modificar con un interrupt
-;es decir, deberia tener el valor 3 en un registro, y que el interrupt sobreescriba el valor
+.org 0034H; RS 6.5
 
-;funciones que deberia tener:
-;rst que incremente los contadores
-;normalmente tiene que estar chequeando el valor e invirtiendolo
-;rst que lea el valor del teclado (de menor prioridad que el temporal)
+.org 003CH; RS 7.5
+PUSH PSW;
+;esta es la rutina de servicio del reloj
+;se supone que genera una interrupcion cada 1seg
+;debe incrementar todos los contadores
+;cambiar los estados
+;etc
+
+
+.org 1000H; PROGRAMA PRINCIPAL
+
+
 
 ;variables: estado de puertas - pueden estar en un solo registro(dificil de operar) o en dos(creo que es lo mejor), o en cuatro (innecesario)
 ;8 bits: estado 1, estado 2, contador 1, contador 1, contador 2(resto de los 4)
-
-;contadores de puertas
-;mostrar valor de tiempo actual
