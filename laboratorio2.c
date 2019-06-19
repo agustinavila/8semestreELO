@@ -16,7 +16,9 @@ void main(void){
 	//inicializaciones
 	Salida1 = 0;			//P0.0 como salida
 	Salida2 = 0;			//P0.1 como salida
-
+	EX0=1;
+	IT1=1;
+	initT0M1();
 	IniciarLCD();										//Inicializo el LCD
 	BorrarLCD();										//Limpio el LCD
 	cargarValores();
@@ -41,6 +43,7 @@ void intT0() interrupt 1 {
 	TL0=0xF0;
 	TR0=1;
 	cont++;
+	cont2++;
 	if (cont==tiempo[indice])
 	{
 		if(indice==3){
@@ -58,7 +61,11 @@ void intT0() interrupt 1 {
 			Salida2 = 0;
 			cont2 = 0;
 		}
+//		#pragma asm
+//		lcall monitor
+//		#pragma endasm
 }}
+//Salida2 =~ Salida2;
 
 
 //Declaracion de funciones
