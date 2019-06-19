@@ -14,56 +14,123 @@
 ;El programa principal deberá mostrar por display los segundos transcurridos.
 ;se supone que el teclado esta en 84h y el display en 80h y 81h
 ;*******************************************************************************
+
+
+;en B y en C tengo los estados de las SALIDAS
+;en d y en e tengo los semiperiodos
+;se supone que el teclado esta conectado en el SA en la direccion 84h
+;se sabe que al ser un digito, sus codigos ascii van de 30 a 39
+
+
 .data 1200h;
 .dB 3FH,06H,5BH,4FH,66H,6DH,7DH,07H,7FH,67H;DATOS DEL LCD
 
-.org 002CH; RS 5.5
+
+.org 0034H; 	RS 6.5 BANDERA 1
+JMP 0200H
+.ORG 0200H
+PUSH PSW
+MVI A, 01H; 	CARGA EL AC CON 1
+STA SALIDA1;
+OUT 70H
+POP PSW
+EI
+RET
+
+
+.ORG 00228H; 	RS 5 BANDERA 2
+JMP 0150H
+.ORG0150H
+PUSH PSW 
+MVI A, 01H;
+STA BANDERA2;
+OUT 71H
+POP PSW
+EI
+RET
+
+
+
+.org 002CH; 	RS 5.5
 ;RUTINA DEL TECLADO
 	PUSH PSW;
-;se supone que el teclado esta conectado en el SA en la direccion 84h
-	IN 84H;leer dato
-;se sabe que al ser un digito, sus codigos ascii van de 30 a 39
+	JMP 0100H
+	.ORG 0100H
+	IN 84H;		leer dato
 	ANI 0FH;enmascarar nible bajo
-	MOV L,A;guardarlo en el registro
-	MVI E, 00H; REINICIA EL CONTADOR DEL PERIODO ACTUAL PARA EVITAR ERRORES
-	OUT 20H; SUPONIENDO QUE EN 20H ESTA EL FF DE RESET DE LA INTERRUPCION
+	STA PERIODO2;	SOBREESCRIBE EL SEMIPERIODO
+	OUT 73H; SUPONIENDO QUE EN 73H ESTA EL FF DE RESET DE LA INTERRUPCION
 	POP PSW;
 	EI
 	RET
 
-.org 0034H; RS 6.5
 
-
-.org 003CH; RS 7.5
+.org 003CH; RS 7.5 rutina servicio del reloj
 	PUSH PSW;
-	INR D;		CONTADOR DE 4SEG	
-	INR E;		CONTADOR DE 3SEG(VARIABLE)
-	MOV A,E;	TRAE EL CONTADOR
-	ADI 01H;	SUPONGO QUE PUEDO USAR UN INR
-	DAA;		SE ASEGURA DE QUE CUENTE EN BCD
-	MOV E,A;	LO GUARDA DE VUELTA
-	CALL TIEMPO;
-	POP PSW
-	EI;
+	LDA BANDERA1;
+	JZ BAND2;
+	DCR D;		CONTADOR DE 4SEG
+	JNZ BAND2;	SI NO LLEGO A CERO, CONTINUA CON LA OTRA TAREA
+	MVI E, 04H;	VUELVE A CARGAR EL CONTADOR
+	MOV A,B;	TRAIGO EL ESTADO DE LA SALIDA
+	JZ INVIERTE1;
+	XRA A;
+	OUT 85H;
+	MOV B,A;	GUARDA LA IMAGEN DE LA SALIDA
+	JMP BAND2;
+INVIERTE1:
+	INR A;		SI ES CERO LA PONE EN 1
+	OUT 85H;	
+	MOV B,A;	GUARDA LA IMAGEN DE LA SALIDA
+BAND2:
+	LDA BANDERA2
+	JZ SALIR
+	DCR E;		CONTADOR DE 3SEG(VARIABLE)
+	JNZ SALIR;
+	LDA PERIODO2;
+	MOV E,A;
+	MOV A,C;
+	JZ INVIERTE2:
+	XRA A;
+	OUT 86H;
+	MOV C,A;	GUARDA LA IMAGEN DE LA SALIDA
+	JMP SALIR;
+INVIERTE2:
+	INR A;		SI ES CERO LA PONE EN 1
+	OUT 86H;	
+	MOV C,A;	GUARDA LA IMAGEN DE LA SALIDA
+SALIR:
+	INR L;
+	DAA;
+	MOV A,H;
+	ACI 00H;
+	DAA;
+	MVI A, 01H
+	STA BANDERAT;
 	RET
 
 
-;en H y en L tengo los dos valores de los semiperiodos
-;en B y en C tengo los estados de las banderas
-
-
 .org 1000H; PROGRAMA PRINCIPAL
-	LXI D, 23H; CARGA D CON 2 Y E CON 3
-	LXI H, 00H;	PONE LAS BANDERAS EN 0
 
+	BANDERA1 EQU 1300H;
+	BANDERA2 EQU 1301H;
+	PERIODO2 EQU 1305H;
+	BANDERAT EQU 1306H;
+	MVI D, 04H;
+	DRC A;				PONE EL AC EN 3
+	MOV E, A;			GUARDA EL CONTADOR EN E
+	STA PERIODO2;		LO GUARDA EN EL SEGUNDO SEMIPERIODO
+	XRA A;
+	STA BANDERA1;
+	STA BANDERA2;
+	OUT 85H;			PONE LAS SALIDAS EN 0
+	OUT 86H;
+
+	
 BUCLE:
-	MOV A,B;
-	CMP D;
-	CZ BANDERA1;
-	MOV A,C;
-	CMP E;
-	CZ BANDERA2;
-	CALL TIEMPO;
+	LDA BANDERA1;
+	ADI 00H;
+	CNZ TIEMPO;
 	JMP BUCLE;
 
 BANDERA1:
