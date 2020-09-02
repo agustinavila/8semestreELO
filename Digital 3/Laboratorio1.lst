@@ -1,0 +1,496 @@
+0001   0000             ;*******************************************************************************
+0002   0000             ;se debe realizar un teclado de alarma con cuatro zonas basado en el 8085.
+0003   0000             ;El sistema posee las siguientes interfaces:
+0004   0000             ;a) 1 teclado
+0005   0000             ;b) 4 interruptores de entrada de zonas de sensado
+0006   0000             ;c) 1 display lcd.
+0007   0000             ;
+0008   0000             ; Funcionamiento del sistema:
+0009   0000             ;Con el teclado se ingresa la clave (cuatro digitos) para activar y desactivar la alarma.
+0010   0000             ;Al estar activada se debe monitorear las zonas. Por display LCD se debe mostrar los
+0011   0000             ;estados de la alarma: "Act", "Desact" y "Zona X act".
+0012   0000             ;Las direcciones de los dispositivos seran asignadas de acuerdo a la siguiente tabla:
+0013   0000             ;Teclado ->	Teclado (in 82h)
+0014   0000             ;Interruptores de sensores de zona -> puerta 84H, bits 3-0
+0015   0000             ; Buzzer -> Puerta B (de un 8155)
+0016   0000             ;*******************************************************************************
+0017   0000             
+0018   0000             	.org 1100h
+0019   1100             	TECLA2	 EQU 09C8H
+0020   1100             	LCD_DATA EQU 1500H
+0021   1100 31 FF 17    	LXI SP,17FFh ; SP EN 17FFH
+0022   1103             
+0023   1103             ;GUARDO LA CONTRASEÑA EN MEMORIA:
+0024   1103 21 00 14    	LXI	H, 1400H
+0025   1106 36 01       	MVI M, 01H;
+0026   1108 2C          	INR L;
+0027   1109 36 02       	MVI M, 02H;
+0028   110B 2C          	INR L;
+0029   110C 36 03       	MVI M, 03H;
+0030   110E 2C          	INR L;
+0031   110F 36 04       	MVI M, 04H;
+0032   1111 2E 00       	MVI L, 00H; LO VUELVE A APUNTAR AL PRIMER DATO
+0033   1113             
+0034   1113             ;-------------------------------------------
+0035   1113             ;Inicializacion de la alarma
+0036   1113             ;-------------------------------------------
+0037   1113             
+0038   1113             ;el bit 0 esta en 1 (PA salida), el bit 1 esta en 1 (PB salida)
+0039   1113             ;en el bit 0 de la puerta b(72H) esta el buzzer
+0040   1113             ;en el puerto A esta el lcd
+0041   1113             ;en la entrada 82h esta el teclado, escribe el nible bajo
+0042   1113             
+0043   1113 3E 03       	MVI	A,03H	 ;CONFIG 8155  
+0044   1115 D3 70       	OUT	70H	 ;BIT 0 = 1(escribo registro comando estado)
+0045   1117 CD 93 12    	CALL	INIC	 ;INICIALIZO LCD
+0046   111A 3E 04       	MVI A, 04H;		EN D ESTA EL ESTADO (ON/OFF) Y EN E ESTA EL CONTADOR DE LA CONTRASEÑA
+0047   111C 32 10 14    	STA 1410H
+0048   111F             	;B CREO QUE LO USA EL LCD
+0049   111F             	;C LO USA EL LECTOR DE ZONA PARA MANTENER UNA COPIA
+0050   111F             	;D INDICA EL ESTADO ACTUAL
+0051   111F             	;E SE UTILIZA PARA CONTROLAR LA CONTRASEÑA
+0052   111F CD 34 12    	CALL DESACT
+0053   1122 CD C8 09    	CALL TECLA2
+0054   1125 16 FF       	MVI D,0FFH
+0055   1127 CD 36 11    	CALL CAMBIOESTADO
+0056   112A             BUCLE:
+0057   112A CD 5B 11    	CALL LEERTECLA
+0058   112D 7A          	MOV A,D; TRAE EL REGISTRO DE ESTADO AL AC
+0059   112E C6 00       	ADI 00H;
+0060   1130 C4 91 11    	CNZ LEERZONA;	SI LA ALARMA ESTA ACTIVADA, LEE LA ZONA
+0061   1133             	;SUPONIENDO QUE LA ENTRADA DE TECLADO  ES POR INTERRUPCION NO TIENE QUE LEER TECLADO ACA
+0062   1133 C3 2A 11    	JMP BUCLE;
+0063   1136             
+0064   1136             ;FUNCIONAMIENTO:
+0065   1136             ;La alarma llama a tecla1, ese valor lo guarda en el acumulador
+0066   1136             ;Si es igual al primer digito de la alarma (lo compara con un LUGAR DE MEMORIA)
+0067   1136             ;incrementa el RP H, carga en el registro de comparacion el siguiente bit, 
+0068   1136             ;decrementa un contador (en registro D) y vuelve a llamar a tecla1.
+0069   1136             ;Si no es el bit indicado, reinicia el ciclo (reinicia contador, reinicia lugar en memoria y recarga digito)
+0070   1136             ;Si es correcto el numero ingresado 4 veces seguidas, la alarma cambia de estado
+0071   1136             ;On/off. Mientras esté en off, la alarma no sensa las zonas.
+0072   1136             ;Cuando esta en on, censa las zonas y las muestra por display.
+0073   1136             
+0074   1136             
+0075   1136             ;		El teclado deberia entrar por interrupciones cosa de que mientras censa las zonas pueda leer el teclado
+0076   1136             
+0077   1136             ;FORMAS POSIBLES DE EJECUTAR EL INGRESO POR TECLADO:
+0078   1136             ;1: SIN INTERRUPCIONES:
+0079   1136             ;CARGA EN UN REGISTRO EL VALOR, LLAMA A TECLA1, ESPERA QUE DEVUELVA UN VALOR
+0080   1136             ;COMPARA, SI ES VALIDO CARGA EL SIGUIENTE Y LLAMA A TECLA1
+0081   1136             ;SI NO ES VALIDO, RECARGA EL VALOR Y VUELVE A TECLA1;
+0082   1136             ;PROBLEMA: CUANDO LA ALARMA ESTA DESACTIVADA ANDA BIEN, PERO CON LA ALARMA ACTIVADA DEJA DE LEER SENSORES
+0083   1136             
+0084   1136             ;2: EL TECLADO TIENE INTERRUPCIONES, Y CADA VEZ QUE SE PRESIONA UNA TECLA SE LEE EL TECLADO (TECLA2?)
+0085   1136             ;EN LA SUBRUTINA HACE LA COMPARACION, CARGA NUEVOS VALORES, ETC
+0086   1136             
+0087   1136             
+0088   1136             
+0089   1136             
+0090   1136             CAMBIOESTADO:			;SE INVOCA ESTA RUTINA CUANDO SE INGRESA CORRECTAMENTE LA CONTRASEÑA
+0091   1136             						;LO UNICO QUE HACE ES ACTUALIZAR EL LCD
+0092   1136             						;Y EL REGISTRO QUE INDICA ACTIVA/DESACTIVA (REG D)
+0093   1136 F5          	PUSH PSW
+0094   1137 2E 00       	MVI L, 00H;			REINICIA PARA LA CONTRASEÑA
+0095   1139 3E 04       	MVI A, 04H;
+0096   113B 32 10 14    	STA 1410H;
+0097   113E AF          	XRA A;				PONE EL ACUMULADOR EN 0
+0098   113F BA          	CMP D;				COMPARA CON EL ESTADO ACTUAL
+0099   1140 CA 4F 11    	JZ ACTIVA;			SI EL ESTADO ACTUAL ES CERO, ACTIZA LA ALARMA
+0100   1143 16 00       	MVI D, 00H;			SI NO, LA DESACTIVA
+0101   1145 3E 80       	MVI A,80H
+0102   1147 CD 5D 13    	CALL COMANDO
+0103   114A CD 34 12    	CALL DESACT;		ESCRIBE EN EL LCD QUE LA ALARMA ESTA DESACT
+0104   114D F1          	POP PSW
+0105   114E C9          	RET;
+0106   114F             ACTIVA:
+0107   114F 16 FF       	MVI D, 0FFH;
+0108   1151 3E 80       	MVI A,80H
+0109   1153 CD 5D 13    	CALL COMANDO
+0110   1156 CD FF 11    	CALL ACT;			ESCRIBE EN EL LCD QUE LA ALARMA ESTA ACTIVA
+0111   1159 F1          	POP PSW;
+0112   115A C9          	RET;
+0113   115B             
+0114   115B             
+0115   115B             LEERTECLA:
+0116   115B F5          	PUSH PSW
+0117   115C C5          	PUSH B
+0118   115D CD C8 09    	CALL TECLA2; 		INDISTINTO, CARGA EL VALOR
+0119   1160 E6 0F       	ANI 0FH
+0120   1162 06 0F       	MVI B, 0FH
+0121   1164 B8          	CMP B
+0122   1165 C2 6B 11    	JNZ SIGUIENTE1
+0123   1168 C1          	POP B
+0124   1169 F1          	POP PSW
+0125   116A C9          	RET
+0126   116B             SIGUIENTE1:
+0127   116B BB          	CMP E;
+0128   116C C2 72 11    	JNZ  PROX
+0129   116F C1          	POP B
+0130   1170 F1          	POP PSW
+0131   1171 C9          	RET;
+0132   1172             PROX:
+0133   1172 5F          	MOV E,A
+0134   1173 BE          	CMP M	
+0135   1174 CA 83 11    	JZ SIGUIENTE; 		SI ES IGUAL, LO ACEPTA Y CARGA EL SIGUIENTE
+0136   1177 1E 11       	MVI E, 11H;
+0137   1179 2E 00       	MVI L, 00H;			SI NO ES IGUAL AL QUE CORRESPONDE VUELVE AL INICIO
+0138   117B 3E 04       	MVI A, 04H;			REINICIA EL CONTADOR
+0139   117D 32 10 14    	STA 1410H;			LO GUARDA EN MEMORIA
+0140   1180 C1          	POP B
+0141   1181 F1          	POP PSW
+0142   1182 C9          	RET;
+0143   1183             SIGUIENTE:
+0144   1183 2C          	INR L;				CARGA EL SIGUIENTE DIGITO DE LA CONTRASEÑA
+0145   1184 3A 10 14    	LDA 1410H
+0146   1187 3D          	DCR A;				SUPONIENDO EN QUE EN E TENGO EL CONTADOR
+0147   1188 32 10 14    	STA 1410H
+0148   118B CC 36 11    	CZ CAMBIOESTADO;
+0149   118E C1          	POP B
+0150   118F F1          	POP PSW
+0151   1190 C9          	RET;
+0152   1191             
+0153   1191             
+0154   1191             LEERZONA: 				;Rutina que lee los sensores, activa el buzzer y manda al display la zona
+0155   1191 DB 84       	IN 84H;
+0156   1193 E6 0F       	ANI 0FH
+0157   1195 4F          	MOV C,A; 			GUARDA UNA COPIA DE LA LECTURA EN C
+0158   1196 E6 08       	ANI 08H;			VA ENMASCARANDO BIT A BIT, CON PRIORIDAD A LA ZONA 4
+0159   1198 C2 B9 11    	JNZ ACTCUATRO;		EN EL MOMENTO QUE ENCUENTRA UNA ZONA ACTIVA, LA ESCRIBE EN PANTALLA
+0160   119B 79          	MOV A,C;			Y ACTIVA EL BUZZER
+0161   119C E6 04       	ANI 04H;
+0162   119E C2 C7 11    	JNZ ACTRES;
+0163   11A1 79          	MOV A,C;
+0164   11A2 E6 02       	ANI 02H;
+0165   11A4 C2 D5 11    	JNZ ACTDOS;
+0166   11A7 79          	MOV A,C;
+0167   11A8 E6 01       	ANI 01H;
+0168   11AA C2 E3 11    	JNZ ACTUNO;
+0169   11AD 3E 80       	MVI A,80H
+0170   11AF CD 5D 13    	CALL COMANDO
+0171   11B2 CD FF 11    	CALL ACT;			SI NINGUN SENSOR ESTA ACTIVO, SOLO DICE "ACT" (REPOSO)
+0172   11B5 CD F8 11    	CALL BUZZEROFF;		Y APAGA EL BUZZER
+0173   11B8 C9          	RET;
+0174   11B9             ACTCUATRO:
+0175   11B9 06 34       	MVI B, 34H;
+0176   11BB 3E 80       	MVI A, 80H
+0177   11BD CD 5D 13    	CALL COMANDO;
+0178   11C0 CD 5F 12    	CALL ZONA;
+0179   11C3 CD F1 11    	CALL BUZZER;
+0180   11C6 C9          	RET;
+0181   11C7             ACTRES:
+0182   11C7 06 33       	MVI B, 33H;
+0183   11C9 3E 80       	MVI A, 80H
+0184   11CB CD 5D 13    	CALL COMANDO;
+0185   11CE CD 5F 12    	CALL ZONA;
+0186   11D1 CD F1 11    	CALL BUZZER;
+0187   11D4 C9          	RET;
+0188   11D5             ACTDOS:
+0189   11D5 06 32       	MVI B, 32H;
+0190   11D7 3E 80       	MVI A, 80H
+0191   11D9 CD 5D 13    	CALL COMANDO;
+0192   11DC CD 5F 12    	CALL ZONA;
+0193   11DF CD F1 11    	CALL BUZZER;
+0194   11E2 C9          	RET;
+0195   11E3             ACTUNO:
+0196   11E3 06 31       	MVI B, 31H;
+0197   11E5 3E 80       	MVI A, 80H
+0198   11E7 CD 5D 13    	CALL COMANDO;
+0199   11EA CD 5F 12    	CALL ZONA;
+0200   11ED CD F1 11    	CALL BUZZER;
+0201   11F0 C9          	RET;
+0202   11F1             
+0203   11F1             
+0204   11F1             
+0205   11F1             BUZZER:					;RUTINA QUE ENCIENDE EL BUZZER
+0206   11F1 F5          	PUSH PSW; 			GUARDA EL ACUMULADOR
+0207   11F2 3E 01       	MVI A, 01H; 		PONE EN 1 EL BIT DEL BUZZER
+0208   11F4 D3 86       	OUT 86H;			LO SACA POR LA PUERTA B DEL 8155
+0209   11F6 F1          	POP PSW; 			LO RECUPERA
+0210   11F7 C9          	RET;
+0211   11F8             
+0212   11F8             
+0213   11F8             BUZZEROFF:				;RUTINA QUE APAGA EL BUZZER
+0214   11F8 F5          	PUSH PSW; 			GUARDA EL ACUMULADOR
+0215   11F9 3E 00       	MVI A, 00H; 		PONE EN 0 EL BIT DEL BUZZER
+0216   11FB D3 86       	OUT 86H;			LO SACA POR LA PUERTA B DEL 8155
+0217   11FD F1          	POP PSW; 			LO RECUPERA
+0218   11FE C9          	RET;
+0219   11FF             
+0220   11FF             
+0221   11FF             
+0222   11FF             
+0223   11FF             
+0224   11FF             
+0225   11FF             
+0226   11FF             
+0227   11FF             ;-------------------------------------------
+0228   11FF             ;Rutinas de cambio de estado de la alarma
+0229   11FF             ;-------------------------------------------
+0230   11FF             
+0231   11FF             ACT:
+0232   11FF F5          	PUSH PSW
+0233   1200             	;MVI A, 01H
+0234   1200             	;CALL COMANDO;
+0235   1200             	;MVI A, 82H;
+0236   1200             	;CALL COMANDO;
+0237   1200 3E 40       	MVI A, 40H;	ASCII "A"
+0238   1202 CD 38 13    	CALL INFO;
+0239   1205 3E 63       	MVI A, 63H; ASCII "c"
+0240   1207 CD 38 13    	CALL INFO;
+0241   120A 3E 74       	MVI A, 74H; ASCII "t"
+0242   120C CD 38 13    	CALL INFO;
+0243   120F 3E 20       	MVI A, 20H; ASCII " "
+0244   1211 CD 38 13    	CALL INFO;
+0245   1214 3E 20       	MVI A, 20H; ASCII " "
+0246   1216 CD 38 13    	CALL INFO;
+0247   1219 3E 20       	MVI A, 20H; ASCII " "
+0248   121B CD 38 13    	CALL INFO;
+0249   121E 3E 20       	MVI A, 20H; ASCII " "
+0250   1220 CD 38 13    	CALL INFO;
+0251   1223 3E 20       	MVI A, 20H; ASCII " "
+0252   1225 CD 38 13    	CALL INFO;
+0253   1228 3E 20       	MVI A, 20H; ASCII " "
+0254   122A CD 38 13    	CALL INFO;
+0255   122D 3E 20       	MVI A, 20H; ASCII " "
+0256   122F CD 38 13    	CALL INFO;
+0257   1232             
+0258   1232 F1          	POP PSW
+0259   1233 C9          	RET;
+0260   1234             
+0261   1234             DESACT:
+0262   1234 F5          	PUSH PSW
+0263   1235             	;MVI A, 01H
+0264   1235             	;CALL COMANDO;
+0265   1235             	;MVI A, 82H;
+0266   1235             	;CALL COMANDO;
+0267   1235 3E 44       	MVI A, 44H;	ASCII "D"
+0268   1237 CD 38 13    	CALL INFO;
+0269   123A 3E 65       	MVI A, 65H; ASCII "e"
+0270   123C CD 38 13    	CALL INFO;
+0271   123F 3E 73       	MVI A, 73H; ASCII "s"
+0272   1241 CD 38 13    	CALL INFO;
+0273   1244 3E 61       	MVI A, 61H;	ASCII "a"
+0274   1246 CD 38 13    	CALL INFO;
+0275   1249 3E 63       	MVI A, 63H; ASCII "c"
+0276   124B CD 38 13    	CALL INFO;
+0277   124E 3E 74       	MVI A, 74H; ASCII "t"
+0278   1250 CD 38 13    	CALL INFO;
+0279   1253 3E 20       	MVI A, 20H; ASCII " "
+0280   1255 CD 38 13    	CALL INFO;
+0281   1258 3E 20       	MVI A, 20H; ASCII " "
+0282   125A CD 38 13    	CALL INFO;
+0283   125D F1          	POP PSW
+0284   125E C9          	RET;
+0285   125F             
+0286   125F             ZONA:
+0287   125F F5          	PUSH PSW
+0288   1260             
+0289   1260             	;MVI A, 82H;
+0290   1260             	;CALL COMANDO;
+0291   1260 3E 5A       	MVI A, 5AH;	ASCII "Z"
+0292   1262 CD 38 13    	CALL INFO;
+0293   1265 3E 6F       	MVI A, 6FH; ASCII "o"
+0294   1267 CD 38 13    	CALL INFO;
+0295   126A 3E 6E       	MVI A, 6EH; ASCII "n"
+0296   126C CD 38 13    	CALL INFO;
+0297   126F 3E 61       	MVI A, 61H;	ASCII "a"
+0298   1271 CD 38 13    	CALL INFO;
+0299   1274 3E 20       	MVI A, 20H;	ASCII " "
+0300   1276 CD 38 13    	CALL INFO;
+0301   1279 78          	MOV A,B; TRAE EL REGISTRO CON LA ZONA QUE SE ACTIVO AL ACUMULADOR
+0302   127A CD 38 13    	CALL INFO;
+0303   127D 3E 20       	MVI A, 20H; ASCII " "
+0304   127F CD 38 13    	CALL INFO;
+0305   1282 3E 61       	MVI A, 61H;	ASCII "a"
+0306   1284 CD 38 13    	CALL INFO;
+0307   1287 3E 63       	MVI A, 63H; ASCII "c"
+0308   1289 CD 38 13    	CALL INFO;
+0309   128C 3E 74       	MVI A, 74H; ASCII "t"
+0310   128E CD 38 13    	CALL INFO;
+0311   1291 F1          	POP PSW
+0312   1292 C9          	RET;
+0313   1293             
+0314   1293             	
+0315   1293             
+0316   1293             
+0317   1293             
+0318   1293             
+0319   1293             
+0320   1293             
+0321   1293             
+0322   1293             
+0323   1293             ;-----------------------------------
+0324   1293             ;De aca para abajo, rutinas del lcd:
+0325   1293             ;-----------------------------------
+0326   1293             
+0327   1293             INIC:	
+0328   1293 3E 00       	MVI	A,00H
+0329   1295 D3 71       	OUT	71H; Supongo que es el puerto A del 8155
+0330   1297             
+0331   1297 CD 24 13    	CALL	D_LCD
+0332   129A CD 24 13    	CALL	D_LCD
+0333   129D CD 24 13    	CALL	D_LCD
+0334   12A0 CD 24 13    	CALL	D_LCD
+0335   12A3             	
+0336   12A3 3E 30       	MVI	A,30H
+0337   12A5 CD 2B 13    	CALL	DATA
+0338   12A8 CD 24 13    	CALL	D_LCD			
+0339   12AB             
+0340   12AB 3E 30       	MVI	A,30H
+0341   12AD CD 2B 13    	CALL	DATA
+0342   12B0 CD 24 13    	CALL	D_LCD			
+0343   12B3             
+0344   12B3 3E 30       	MVI	A,030H
+0345   12B5 CD 2B 13    	CALL	DATA
+0346   12B8 CD 24 13    	CALL	D_LCD			
+0347   12BB             
+0348   12BB             	;;;;;;;;;;;;;
+0349   12BB             
+0350   12BB 3E 20       	MVI	A,20H
+0351   12BD CD 2B 13    	CALL	DATA
+0352   12C0 CD 24 13    	CALL	D_LCD			
+0353   12C3             
+0354   12C3 3E 20       	MVI	A,20H
+0355   12C5 CD 2B 13    	CALL	DATA
+0356   12C8 CD 24 13    	CALL	D_LCD			
+0357   12CB             	
+0358   12CB 3E 80       	MVI	A,80H
+0359   12CD CD 2B 13    	CALL	DATA
+0360   12D0 CD 24 13    	CALL	D_LCD			
+0361   12D3             
+0362   12D3 3E 00       	MVI	A,00H
+0363   12D5 CD 2B 13    	CALL	DATA
+0364   12D8 CD 24 13    	CALL	D_LCD
+0365   12DB             
+0366   12DB 3E 80       	MVI	A,80H
+0367   12DD CD 2B 13    	CALL	DATA
+0368   12E0 CD 24 13    	CALL	D_LCD	
+0369   12E3             
+0370   12E3 3E 00       	MVI	A,00H
+0371   12E5 CD 2B 13    	CALL	DATA
+0372   12E8 CD 24 13    	CALL	D_LCD			
+0373   12EB             		
+0374   12EB 3E F0       	MVI	A,0F0H
+0375   12ED CD 2B 13    	CALL	DATA
+0376   12F0 CD 24 13    	CALL	D_LCD	
+0377   12F3             
+0378   12F3 3E 00       	MVI	A,00H
+0379   12F5 CD 2B 13    	CALL	DATA
+0380   12F8 CD 24 13    	CALL	D_LCD			
+0381   12FB             	
+0382   12FB 3E 60       	MVI	A,60H
+0383   12FD CD 2B 13    	CALL	DATA
+0384   1300 CD 24 13    	CALL	D_LCD	
+0385   1303             
+0386   1303 3E 00       	MVI	A,00H
+0387   1305 CD 2B 13    	CALL	DATA
+0388   1308 CD 24 13    	CALL	D_LCD			
+0389   130B             
+0390   130B 3E 10       	MVI	A,10H
+0391   130D CD 2B 13    	CALL	DATA
+0392   1310 CD 24 13    	CALL	D_LCD
+0393   1313             
+0394   1313 3E 00       	MVI	A,00H
+0395   1315 CD 2B 13    	CALL	DATA
+0396   1318 CD 24 13    	CALL	D_LCD			
+0397   131B             
+0398   131B 3E 20       	MVI	A,20H
+0399   131D CD 2B 13    	CALL	DATA
+0400   1320 CD 24 13    	CALL	D_LCD			
+0401   1323             	
+0402   1323 C9          	RET		
+0403   1324             		
+0404   1324             
+0405   1324             			
+0406   1324             
+0407   1324             ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0408   1324             ;;;;;;;; DELAY LCD ;;;;;;;;
+0409   1324             ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0410   1324             
+0411   1324             D_LCD:
+0412   1324 16 00       		MVI D,00H
+0413   1326 15          V1:		DCR D
+0414   1327 C2 26 13    		JNZ V1		
+0415   132A C9          		RET
+0416   132B             
+0417   132B             ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0418   132B             ;;;;; ESCRIBIR COMANDO ;;;;
+0419   132B             ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0420   132B             
+0421   132B             DATA:		
+0422   132B E6 F0       	ANI	0F0H
+0423   132D C6 08       	ADI	08H
+0424   132F D3 71       	OUT	71H
+0425   1331 00          	NOP
+0426   1332 00          	NOP
+0427   1333 E6 F0       	ANI	0F0H
+0428   1335 D3 71       	OUT	71H
+0429   1337 C9          	RET
+0430   1338             
+0431   1338             ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0432   1338             ;;;;;; ESCRIBIR DATO ;;;;;;
+0433   1338             ;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0434   1338             
+0435   1338             INFO:	
+0436   1338 32 00 15    	STA	LCD_DATA
+0437   133B E6 F0       	ANI	0F0H
+0438   133D C6 0C       	ADI	0CH
+0439   133F D3 71       	OUT	71H
+0440   1341 00          	NOP
+0441   1342 00          	NOP
+0442   1343 E6 F0       	ANI	0F0H
+0443   1345 C6 04       	ADI	04H
+0444   1347 D3 71       	OUT	71H
+0445   1349             
+0446   1349 3A 00 15    	LDA	LCD_DATA
+0447   134C 07          	RLC
+0448   134D 07          	RLC
+0449   134E 07          	RLC
+0450   134F 07          	RLC
+0451   1350 E6 F0       	ANI	0F0H
+0452   1352 C6 0C       	ADI	0CH
+0453   1354 D3 71       	OUT	71H
+0454   1356 00          	NOP
+0455   1357 00          	NOP
+0456   1358 E6 F0       	ANI	0F0H
+0457   135A D3 71       	OUT	71H
+0458   135C             
+0459   135C C9          	RET
+0460   135D             
+0461   135D             
+0462   135D             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0463   135D             ;;;;;;;;;; COMANDO ;;;;;;;;;;;
+0464   135D             ; 8X -> 1ra FILA - X COLUMNA ;
+0465   135D             ; CX -> 2da FILA - X COLUMNA ;
+0466   135D             ; 01 -> LIMPIA DISPLAY       ;
+0467   135D             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+0468   135D             
+0469   135D             COMANDO:
+0470   135D 32 00 15    	STA	LCD_DATA
+0471   1360 E6 F0       	ANI	0F0H
+0472   1362 C6 08       	ADI	08H
+0473   1364 D3 71       	OUT	71H
+0474   1366 00          	NOP
+0475   1367 00          	NOP
+0476   1368 E6 F0       	ANI	0F0H
+0477   136A C6 04       	ADI	04H
+0478   136C D3 71       	OUT	71H
+0479   136E             
+0480   136E 3A 00 15    	LDA	LCD_DATA
+0481   1371 07          	RLC
+0482   1372 07          	RLC
+0483   1373 07          	RLC
+0484   1374 07          	RLC
+0485   1375 E6 F0       	ANI	0F0H
+0486   1377 C6 08       	ADI	08H
+0487   1379 D3 71       	OUT	71H
+0488   137B 00          	NOP
+0489   137C 00          	NOP
+0490   137D E6 F0       	ANI	0F0H
+0491   137F D3 71       	OUT	71H
+0492   1381             
+0493   1381 C9          	RET
+0494   1382             
+0495   1382             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+Number of errors = 0

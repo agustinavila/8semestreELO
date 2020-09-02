@@ -1,0 +1,158 @@
+C51 COMPILER V9.60.0.0   LABORATORIO2                                                      06/18/2019 20:00:31 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE LABORATORIO2
+OBJECT MODULE PLACED IN d:\Users\Agustin\Documents\Facultad\Digital 3\Digital3\laboratorio2.OBJ
+COMPILER INVOKED BY: C:\Keil_v5\C51\BIN\C51.exe d:\Users\Agustin\Documents\Facultad\Digital 3\Digital3\laboratorio2.c
+
+line level    source
+
+   1          #include <REG51.H>
+   2          #include <lcd.h>
+   3          //variables especiales C51
+   4          sbit Salida1 = P1^6;
+   5          sbit Salida2 = P1^7;
+   6          //variables globales
+   7          unsigned char tiempo[4];
+   8          unsigned char tiempototal, tiempo1, tiempo2 , tiempo3 , tiempo4;
+   9          //declaracion de funciones
+  10          void initT0M1(void);
+  11          void displaylcd(void);
+  12          void cargarValores(void);
+  13          void mostrarLCD (unsigned char dato,unsigned char c);
+  14          
+  15          //programa principal
+  16          void main(void){
+  17   1              //inicializaciones
+  18   1              Salida1 = 0;                    //P0.0 como salida
+  19   1              Salida2 = 0;                    //P0.1 como salida
+  20   1      
+  21   1              IniciarLCD();                                                                           //Inicializo el LCD
+  22   1              BorrarLCD();                                                                            //Limpio el LCD
+  23   1              cargarValores();
+  24   1              EA=1;
+  25   1              //Loop
+  26   1              while (1){
+  27   2                               displaylcd();
+  28   2              }
+  29   1      }
+  30          
+  31          
+  32          //Interrupciones
+  33          void intExt(void) interrupt 0 {
+  34   1              cargarValores();
+  35   1      }
+  36          
+  37          void intT0() interrupt 1 {
+  38   1              static unsigned char cont = 0;
+  39   1              static unsigned char cont2 = 0;
+  40   1              static unsigned char indice = 0;
+  41   1              TR0=0;
+  42   1              TH0=0xD8;
+  43   1              TL0=0xF0;
+  44   1              TR0=1;
+  45   1              cont++;
+  46   1              if (cont==tiempo[indice])
+  47   1              {
+  48   2                      if(indice==3){
+  49   3                              indice=0;
+  50   3                      } else indice++;
+  51   2                      cont=0;
+  52   2                      Salida1=~Salida1;
+  53   2              }
+  54   1      
+  55   1              if(cont2==(tiempototal)){
+C51 COMPILER V9.60.0.0   LABORATORIO2                                                      06/18/2019 20:00:31 PAGE 2   
+
+  56   2                      if(tiempototal>0){
+  57   3                              Salida2 =~ Salida2;             // toggle
+  58   3                              cont2 = 0;
+  59   3                      }else{
+  60   3                              Salida2 = 0;
+  61   3                              cont2 = 0;
+  62   3                      }
+  63   2      }}
+  64          
+  65          
+  66          //Declaracion de funciones
+  67          
+  68          void initT0M1(){
+  69   1              TR0=0;
+  70   1              TMOD&=0xF0;
+  71   1              TMOD|=0x01;
+  72   1              TH0=0xD8;
+  73   1              TL0=0xF0;
+  74   1              //TR0=1;
+  75   1              TF0=0;
+  76   1              ET0=1;
+  77   1      }
+  78          
+  79          void cargarValores(void){
+  80   1              TR0=0;
+  81   1              SetCursor(1,0);                                                 //Cursor Fila: 1 Col: 0
+  82   1              EscribirLCD("ingrese tiempo1 en ms");           //Escribo LCD# pragma asm
+  83   1              # pragma asm
+*** ERROR C272 IN LINE 83 OF d:\Users\Agustin\Documents\Facultad\Digital 3\Digital3\laboratorio2.c: 'asm/endasm' require
+             -s src-control to be active
+  84   1              LCALL 0x003c;           //direccion de getchr
+  85   1              # pragma endasm
+*** ERROR C272 IN LINE 85 OF d:\Users\Agustin\Documents\Facultad\Digital 3\Digital3\laboratorio2.c: 'asm/endasm' require
+             -s src-control to be active
+  86   1              tiempo1=0x0F&ACC;
+  87   1              SetCursor(1,0);                                                 //Cursor Fila: 1 Col: 0
+  88   1              EscribirLCD("ingrese tiempo2 en ms");           //Escribo LCD# pragma asm
+  89   1              # pragma asm
+*** ERROR C272 IN LINE 89 OF d:\Users\Agustin\Documents\Facultad\Digital 3\Digital3\laboratorio2.c: 'asm/endasm' require
+             -s src-control to be active
+  90   1              LCALL 003Ch
+  91   1              # pragma endasm
+*** ERROR C272 IN LINE 91 OF d:\Users\Agustin\Documents\Facultad\Digital 3\Digital3\laboratorio2.c: 'asm/endasm' require
+             -s src-control to be active
+  92   1              tiempo2=0x0F&ACC;
+  93   1              SetCursor(1,0);                                                 //Cursor Fila: 1 Col: 0
+  94   1              EscribirLCD("ingrese tiempo3 en ms");           //Escribo LCD# pragma asm
+  95   1              # pragma asm
+*** ERROR C272 IN LINE 95 OF d:\Users\Agustin\Documents\Facultad\Digital 3\Digital3\laboratorio2.c: 'asm/endasm' require
+             -s src-control to be active
+  96   1              LCALL 003Ch
+  97   1              # pragma endasm
+*** ERROR C272 IN LINE 97 OF d:\Users\Agustin\Documents\Facultad\Digital 3\Digital3\laboratorio2.c: 'asm/endasm' require
+             -s src-control to be active
+  98   1              tiempo3=0x0F&ACC;
+  99   1              SetCursor(1,0);                                                 //Cursor Fila: 1 Col: 0
+ 100   1              EscribirLCD("ingrese tiempo4 en ms");           //Escribo LCD# pragma asm
+ 101   1              # pragma asm
+*** ERROR C272 IN LINE 101 OF d:\Users\Agustin\Documents\Facultad\Digital 3\Digital3\laboratorio2.c: 'asm/endasm' requir
+             -es src-control to be active
+ 102   1              LCALL 003Ch
+ 103   1              # pragma endasm
+C51 COMPILER V9.60.0.0   LABORATORIO2                                                      06/18/2019 20:00:31 PAGE 3   
+
+*** ERROR C272 IN LINE 103 OF d:\Users\Agustin\Documents\Facultad\Digital 3\Digital3\laboratorio2.c: 'asm/endasm' requir
+             -es src-control to be active
+ 104   1              tiempo4=0x0F&ACC;
+ 105   1              tiempototal=tiempo1+tiempo2-tiempo3-tiempo4;
+ 106   1              if(tiempototal<0){
+ 107   2                      SetCursor(2,0);         //Cursor Fila: 2 Col: 15
+ 108   2                      EscribirLCD("Error!");  //Mensaje de error !
+ 109   2                      tiempototal=-tiempototal;
+ 110   2              }
+ 111   1              tiempototal=tiempototal/2;
+ 112   1              mostrarLCD(tiempo1,0);
+ 113   1              mostrarLCD(tiempo2,3);
+ 114   1              mostrarLCD(tiempo3,6);
+ 115   1              mostrarLCD(tiempo4,9);
+ 116   1              mostrarLCD(tiempototal,12);
+ 117   1              tiempo[0]=tiempo1;
+ 118   1              tiempo[1]=tiempo2;
+ 119   1              tiempo[2]=tiempo3;
+ 120   1              tiempo[3]=tiempo4;
+ 121   1              TR0=1;
+ 122   1      }
+ 123          void mostrarLCD (unsigned char dato,unsigned char c){
+ 124   1              SetCursor(2,c);
+ 125   1              EscribirNum(dato);      //escribo LCD
+ 126   1      }
+ 127          //Fin
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  8 ERROR(S)
