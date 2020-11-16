@@ -6,8 +6,8 @@
 
 #pragma region constantes
 // Definiciones de constantes
-#define tiempo_rx 100						 //tiempo de RX
-#define tiempo_tx 30						 //Tiempo de TX
+#define tiempo_rx 30						 //tiempo de RX
+#define tiempo_tx 10						 //Tiempo de TX
 #define TENSION_MAX 5.0						 //Tensión máxima de salida del pwm
 #define ZONA_MUERTA 1						 //ZONA MUERTA DEL MOTOR
 #define SALIDA_MAX TENSION_MAX - ZONA_MUERTA //Salida máxima del PID (luego se le resta la Zona Muerta del Motor si hace falta)
