@@ -53,7 +53,7 @@ float dataNumber = 0.0;
 
 #pragma region inicio_objetos
 //Declaracion del objeto del motor
-AF_DCMotor motor(4, MOTOR34_8KHZ); //define la frecuencia de la señal PWM
+AF_DCMotor motor(1, MOTOR34_8KHZ); //define la frecuencia de la señal PWM
 //Declaracion del objeto del PID
 PID myPID(&entrada, &salida, &setpoint, Kp, Ki, Kd, P_ON_E, DIRECT);
 #pragma endregion
