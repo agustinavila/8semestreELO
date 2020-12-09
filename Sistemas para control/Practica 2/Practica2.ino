@@ -53,7 +53,6 @@ float referencia;
 int switchref = 0;
 const int TxPin485 = 2;
 
-
 #pragma endregion
 
 #pragma region inicio_objetos
@@ -68,8 +67,6 @@ Adafruit_ADS1115 ads;
 
 void setup()
 {
-
-	// Config Modbus Serial (port, speed, byte format)
 	if (RS485activo == 1)
 	{ //RS485 por COM virtual en PC
 		mb.config(&Serial, 115200, SERIAL_8N1, TxPin485);
@@ -78,22 +75,16 @@ void setup()
 	{ //RS232 por COM virtual en PC
 		mb.config(&Serial, 115200, SERIAL_8N1);
 	}
-
-	// Set the Slave ID (1-247)
+	//configuraciones del modbus
 	mb.setSlaveId(10);
-
-	// Add SENSOR_IREG register - Use addIreg() for analog Inputs
 	mb.addIreg(SENSOR_IREG);
-	// Add SENSOR_HREG (Holding Register) - Use addHreg() for analog Inputs/Outputs
 	mb.addHreg(SENSOR_HREG);
 	mb.addIreg(SENSOR_ADC);
 	mb.addIreg(SENSOR_REF);
 	mb.addCoil(COIL_REF);
+	//configuraciones de motor y PID
 	motor.setSpeed(0);	//Define vel en 0
 	motor.run(RELEASE); //Detiene el motor
-
-	//Serial.begin(115200); //Inicializa comunicación serie a 115200 bits por segundo
-
 	myPID.SetSampleTime(Ts);														//Seteo período de muestreo del PID a 1 ms
 	myPID.SetOutputLimits(-(SALIDA_MAX - ZONA_MUERTA), (SALIDA_MAX - ZONA_MUERTA)); //Seteo los límites de salida del PID (teniendo en cuenta la zona muerta del Motor)
 	myPID.SetMode(AUTOMATIC);
@@ -180,4 +171,21 @@ void loop()
 		bandera_rx = 0;
 	}
 #pragma endregion
+}
+
+void timerIsr()
+{
+	bandera_control = 1; //activa tarea lazo de control cada 1 ms
+	contador_tx++;
+	contador_rx++;
+	if (contador_tx >= tiempo_tx) //activa tarea transmisión de datos cada 10 ms
+	{
+		bandera_tx = 1;
+		contador_tx = 0;
+	}
+	if (contador_rx >= tiempo_rx) //activa tarea recepción de datos cada 50 ms
+	{
+		bandera_rx = 1;
+		contador_rx = 0;
+	}
 }
