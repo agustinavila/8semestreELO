@@ -1,0 +1,38 @@
+empresas de resistencias argentinas:
+FARE
+https://fareresistencias.com.ar/resistencias-tubulares-estandar/
+
+Ohmmica
+https://ohmmica.com.ar/galeria/6
+
+
+Brototermic española
+http://www.brototermic.com/docs/catalogo-resistencias-calefactoras.pdf
+
+
+Salvador Escoda española
+https://www.salvadorescoda.com/tarifas/Resistencias_Electricas_Tarifa_PVP_SalvadorEscoda.pdf
+
+Calentador RECO 3kw
+https://articulo.mercadolibre.com.ar/MLA-727435147-resistencia-termotanque-electrico-3000w-reco-original-italia-_JM#position=1&type=item&tracking_id=e87d8824-61c3-429a-aa16-bc0f3cde1899
+
+https://www.amazon.com/Rheem-UV12900-Element-240-volt-5500-watt/dp/B000WYZSQU
+
+
+
+Cajas
+https://articulo.mercadolibre.com.ar/MLA-608076534-caja-estanco-20x12x12-gabinete-pvc-ip67-arranque-directo-_JM#position=15&type=item&tracking_id=4b49b076-147c-4805-a0fd-346766ed0b28
+https://articulo.mercadolibre.com.ar/MLA-635310826-gabinete-estanco-tapa-alta-220x170x150-con-tapones-ip65-_JM#reco_item_pos=0&reco_backend=machinalis-seller-items-pdp&reco_backend_type=low_level&reco_client=vip-seller_items-above&reco_id=5894eadb-2bc6-4e76-aefa-d101a2062884
+https://articulo.mercadolibre.com.ar/MLA-860942484-gabinete-plastico-estanco-ip67-207x284x120mm-gris-tableplast-_JM#position=6&type=item&tracking_id=cab096c9-f5a1-4216-ab16-9196e4f5738e
+
+
+
+Opciones de sensado:
+LM35 - Lectura analogica
+ds18b20 - Lectura digital
+
+Por lo que encontramos necesitariamos una resistencia de 5kw, pero la mas grande es de 3kw(monofasica)
+Las alternativas son usar dos monofasicas en serie o buscar resistencias trifasicas.
+Respecto a las resistencias trifasicas, el problema es el circuito de control que deberia manejar 3 fases.
+Habria que detectar el cruce por cero con una interrupcion en arduino, y respecto a eso disparar cada linea por separado
+Entonces el arduino tendria una entrada del circuito detector de cruce por cero, conectada a una interrupcion, y de ahi 
