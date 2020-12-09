@@ -34,11 +34,6 @@ int pot = 0;
 byte pwm_motor;
 bool bandera_control = 0;  //activa tarea lazo de control
 float sensibilidad = 0.66; //sensibilidad del sensor hall
-//variables del adc y sensor de corriente
-// float SENSIBILITY = 0.185;	//Sensibilidad del sensor de corriente
-// short offset = 0;
-// short adc0 = 0;
-//Variables para la transmision y recepcion
 
 //Modbus Registers Offsets (0-9999)
 const int SENSOR_IREG = 100;
@@ -51,10 +46,6 @@ byte contador_tx = 0; //Para temporizacion
 byte contador_rx = 0; //Para temp
 bool bandera_tx = 0;  // activa tarea transmisión de datos
 bool bandera_rx = 0;  // activa tarea recepción de datos
-char buffer_tx[20];
-char buffer_rx[20];
-const byte numChars = 20; //
-char receivedChars[20];	  // Arreglo donde se guardan los bytes recibidos
 float dataNumber = 0.0;
 int adc0;		 //lectura del adc
 float corriente; //Conversion a corriente
@@ -62,10 +53,6 @@ float referencia;
 int switchref = 0;
 const int TxPin485 = 2;
 
-//numerador y denominador del filtro IIR pasabajo de 40Hz:
-//const float num[N] = {0.5, 0.2, 0.15, 0.1, 0.05};
-// const float num[N] = {0.0001832160, 0.0007328641, 0.0010992961, 0.0007328641, 0.0001832160};
-// const float den[N] = {0.5174781998, -2.4093428566, 4.2388639509, -3.3440678377, 1.0000000000};
 
 #pragma endregion
 
@@ -78,24 +65,6 @@ PID myPID(&entrada, &salida, &setpoint, Kp, Ki, Kd, P_ON_E, DIRECT);
 ModbusSerial mb;
 Adafruit_ADS1115 ads;
 #pragma endregion
-
-float filtroFIR()
-{
-	const int N = 3; //cantidad de puntos
-	int k;
-	static float ent[N] = {analogRead(A1)}; //inicializa arreglo en el primer valor del pote
-	float out = 0;
-	for (k = 1; k < N; k++)
-	{
-		ent[k - 1] = ent[k]; //desplaza los valores
-	}
-	ent[N - 1] = analogRead(A1); //lee la nueva entrada
-	for (k = 0; k < N; k++)
-	{
-		out = out + ent[k]; //Sumatoria de las ultimas entradas
-	}
-	return (float)out / N; //devuelve el promedio de las ultimas N muestras
-}
 
 void setup()
 {
@@ -199,9 +168,6 @@ void loop()
 	//Chequeo para transmision y recepcion
 	if (bandera_tx == 1)
 	{
-		// sprintf(buffer_tx, "%d,%d", (int)(ref * 100.0), (int)(sensor * 100.0));
-		// sprintf(buffer_tx, "%d,%d,%d,%d", (int)(ref * 100.0), (int)(sensor * 100.0),(int)(salida*1000),(int)(error*100));
-		// Serial.println(buffer_tx);
 		mb.Ireg(SENSOR_IREG, sensor);	 //referencia acoplada al motor
 		mb.Ireg(SENSOR_ADC, corriente);	 //corriente consumida
 		mb.Ireg(SENSOR_REF, referencia); //referencia 2, segundo potenciometro
@@ -209,27 +175,9 @@ void loop()
 	}
 	if (bandera_rx == 1)
 	{
-		// recvWithEndMarker();
 		switchref = (int)mb.Coil(COIL_REF);
 		dataNumber = (float)(int)(mb.Hreg(SENSOR_HREG));
 		bandera_rx = 0;
 	}
 #pragma endregion
-}
-
-void timerIsr()
-{
-	bandera_control = 1; //activa tarea lazo de control cada 1 ms
-	contador_tx++;
-	contador_rx++;
-	if (contador_tx >= tiempo_tx) //activa tarea transmisión de datos cada 10 ms
-	{
-		bandera_tx = 1;
-		contador_tx = 0;
-	}
-	if (contador_rx >= tiempo_rx) //activa tarea recepción de datos cada 50 ms
-	{
-		bandera_rx = 1;
-		contador_rx = 0;
-	}
 }
