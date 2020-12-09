@@ -1,0 +1,37 @@
+parcial integrador:
+
+sensores de presion:
+necesitaria un transductor de presion electromecanico con salida 4 20 ma
+PX409-150GI rango 10.3 bar - salida 420
+aprox 500 euros xdxd - aprox 60k pesos?
+https://articulo.mercadolibre.com.ar/MLA-872784071-transmisor-sensor-de-presion-winters-le1-14-rangos-_JM#position=3&type=item&tracking_id=e09f5d98-aceb-46af-add8-d084d94f1180
+11k - rango minimo 70bar
+
+https://articulo.mercadolibre.com.ar/MLA-611142727-85-300g-4c-85-300g-4c-sensor-presion-300-psi-rosca-14-_JM#position=18&type=item&tracking_id=30109ce5-9093-48a9-a67d-cb3fd24b580d
+12k pesos - rango salida 0 - 100mv
+
+
+
+sensores de caudal:
+https://www.ifm.com/ar/es/product/SA5000
+aprox 37k
+
+
+
+sensores de nivel:
+Por lo que estuve leyendo, para liquidos corrosivos se utilizan mucho sensores por radar
+Los mas recurrentes son los vegapuls
+https://articulo.mercadolibre.com.ar/MLA-826183691-sensor-radar-para-la-medicion-continua-de-nivel-de-liquidos-_JM#position=4&type=item&tracking_id=67110c85-a5a5-49ac-879f-bc0fe4ac965a
+vegapuls 64 - mide hasta 30m, sensibilidad 1mm, rango de temp 
+
+SALE 620K PESOS - Overkill
+
+
+https://articulo.mercadolibre.com.ar/MLA-824744116-sensor-de-nivel-por-radar-ts-314r-_JM#position=3&type=item&tracking_id=f579990d-4d5e-4485-97ba-859df6c333c5
+sensor  TS 314 R
+hasta 8m
+precision 5mm
+salida 420ma
+90k pesos
+Las partes del equipo en contacto con el medio están hechas de Valox, PBT o PP.
+pbt es resistente al cloro aparentemente (referencia de trajes de baño?)
