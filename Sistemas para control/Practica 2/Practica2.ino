@@ -32,8 +32,8 @@ float Kp = .7, Ki = 0.15, Kd = 0.005;
 float ref = 0.0, sensor = 0.0, error = 0.0;
 int pot = 0;
 byte pwm_motor;
-bool bandera_control = 0; //activa tarea lazo de control
-float sensibilidad = 0.66;	//sensibilidad del sensor hall
+bool bandera_control = 0;  //activa tarea lazo de control
+float sensibilidad = 0.66; //sensibilidad del sensor hall
 //variables del adc y sensor de corriente
 // float SENSIBILITY = 0.185;	//Sensibilidad del sensor de corriente
 // short offset = 0;
@@ -44,7 +44,7 @@ float sensibilidad = 0.66;	//sensibilidad del sensor hall
 const int SENSOR_IREG = 100;
 const int SENSOR_HREG = 200;
 const int SENSOR_ADC = 102;
-const int SENSOR_REF =101;
+const int SENSOR_REF = 101;
 const int COIL_REF = 110;
 
 byte contador_tx = 0; //Para temporizacion
@@ -56,10 +56,10 @@ char buffer_rx[20];
 const byte numChars = 20; //
 char receivedChars[20];	  // Arreglo donde se guardan los bytes recibidos
 float dataNumber = 0.0;
-int adc0;			//lectura del adc
-float corriente;	//Conversion a corriente
+int adc0;		 //lectura del adc
+float corriente; //Conversion a corriente
 float referencia;
-int switchref =0;
+int switchref = 0;
 const int TxPin485 = 2;
 
 //numerador y denominador del filtro IIR pasabajo de 40Hz:
@@ -128,17 +128,17 @@ void setup()
 	myPID.SetSampleTime(Ts);														//Seteo período de muestreo del PID a 1 ms
 	myPID.SetOutputLimits(-(SALIDA_MAX - ZONA_MUERTA), (SALIDA_MAX - ZONA_MUERTA)); //Seteo los límites de salida del PID (teniendo en cuenta la zona muerta del Motor)
 	myPID.SetMode(AUTOMATIC);
-	ads.setGain(GAIN_ONE);        // 1x gain   +/- 4.096V  1 bit = 2mV      0.125mV
-	ads.begin();	//Inicial el objeto del adc
+	ads.setGain(GAIN_ONE);			  // 1x gain   +/- 4.096V  1 bit = 2mV      0.125mV
+	ads.begin();					  //Inicial el objeto del adc
 	Timer1.initialize(1000);		  // configura un timer de 1 ms
 	Timer1.attachInterrupt(timerIsr); // asocia una la interrupción de un timer a una rutina de servicio de interrupción
 }
 
 void loop()
 {
-	referencia = (float)((float)analogRead(A0)- SENSOR_MEDIO) * POT2GRAD;
-	adc0 = ads.readADC_Differential_0_1();	//Lee la entrada diferencial del adc
-	corriente=(float)adc0/(sensibilidad*8);
+	referencia = (float)((float)analogRead(A0) - SENSOR_MEDIO) * POT2GRAD;
+	adc0 = ads.readADC_Differential_0_1(); //Lee la entrada diferencial del adc
+	corriente = (float)adc0 / (sensibilidad * 8);
 	//El adc en GAIN_ONE tiene una resolucion de 0.125mV
 	//Por lo tanto al leer la salida dividida en 8 da la lectura en milivolts
 	//Ese valor se divide tambien en la sensibilidad del sensor hall
@@ -146,9 +146,10 @@ void loop()
 	mb.task();
 	if (bandera_control == 1) // Lazo de control
 	{
-		#pragma region sensado
-		if (switchref==1){
-			dataNumber=referencia;
+#pragma region sensado
+		if (switchref == 1)
+		{
+			dataNumber = referencia;
 		}
 		ref = dataNumber; //lee referencia de HyperIMU ([-90,90] en este caso, actualizada en "dataNumber" cada 50ms)
 						  // ref= ((float)analogRead(A2)- SENSOR_MEDIO)*POT2GRAD; //Para usar otro pote de ref
@@ -201,15 +202,15 @@ void loop()
 		// sprintf(buffer_tx, "%d,%d", (int)(ref * 100.0), (int)(sensor * 100.0));
 		// sprintf(buffer_tx, "%d,%d,%d,%d", (int)(ref * 100.0), (int)(sensor * 100.0),(int)(salida*1000),(int)(error*100));
 		// Serial.println(buffer_tx);
-		mb.Ireg(SENSOR_IREG, sensor);		//referencia acoplada al motor
-		mb.Ireg(SENSOR_ADC,	corriente);		//corriente consumida
-		mb.Ireg(SENSOR_REF, referencia);	//referencia 2, segundo potenciometro
+		mb.Ireg(SENSOR_IREG, sensor);	 //referencia acoplada al motor
+		mb.Ireg(SENSOR_ADC, corriente);	 //corriente consumida
+		mb.Ireg(SENSOR_REF, referencia); //referencia 2, segundo potenciometro
 		bandera_tx = 0;
 	}
 	if (bandera_rx == 1)
 	{
 		// recvWithEndMarker();
-		switchref=(int)mb.Coil(COIL_REF);
+		switchref = (int)mb.Coil(COIL_REF);
 		dataNumber = (float)(int)(mb.Hreg(SENSOR_HREG));
 		bandera_rx = 0;
 	}
