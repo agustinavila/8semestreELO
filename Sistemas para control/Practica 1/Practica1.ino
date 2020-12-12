@@ -53,14 +53,14 @@ float dataNumber = 0.0;
 
 #pragma region inicio_objetos
 //Declaracion del objeto del motor
-AF_DCMotor motor(1, MOTOR34_8KHZ); //define la frecuencia de la señal PWM
+AF_DCMotor motor(4, MOTOR34_8KHZ); //define la frecuencia de la señal PWM
 //Declaracion del objeto del PID
 PID myPID(&entrada, &salida, &setpoint, Kp, Ki, Kd, P_ON_E, DIRECT);
 #pragma endregion
 
 float filtroFIR()
 {
-	const int N = 3; //cantidad de puntos
+	int N = 3; //cantidad de puntos
 	int k;
 	static float ent[N] = {analogRead(A1)}; //inicializa arreglo en el primer valor del pote
 	float out = 0;
@@ -89,6 +89,7 @@ void setup()
 
 	Timer1.initialize(1000);		  // configura un timer de 1 ms
 	Timer1.attachInterrupt(timerIsr); // asocia una la interrupción de un timer a una rutina de servicio de interrupción
+	Serial.println("Referenca,Sensor,AccionControl,Error");
 }
 
 void loop()
