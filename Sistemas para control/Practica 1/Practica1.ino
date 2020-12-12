@@ -9,7 +9,7 @@
 #define tiempo_rx 30						 //tiempo de RX
 #define tiempo_tx 10						 //Tiempo de TX
 #define TENSION_MAX 5.0						 //Tensión máxima de salida del pwm
-#define ZONA_MUERTA 1						 //ZONA MUERTA DEL MOTOR
+#define ZONA_MUERTA 1.0						 //ZONA MUERTA DEL MOTOR
 #define SALIDA_MAX TENSION_MAX - ZONA_MUERTA //Salida máxima del PID (luego se le resta la Zona Muerta del Motor si hace falta)
 #define TOLERANCIA 1						 //Tolerancia en grados
 #define REF_MAX 90.0						 //posicion maxima en grados
@@ -25,7 +25,7 @@
 //Definiciones para el PID
 double setpoint = 0.0, entrada = 0.0, salida = 0.0;
 //Parametros PID
-float Kp = .7, Ki = 0.1, Kd = 0.005;
+float Kp = 0.7, Ki = 0.1, Kd = 0.005;
 //Variables leídas y error entre ellas
 float ref = 0.0, sensor = 0.0, error = 0.0;
 int pot = 0;
@@ -43,7 +43,7 @@ char buffer_rx[20];
 const byte numChars = 20; //
 char receivedChars[20];	  // Arreglo donde se guardan los bytes recibidos
 float dataNumber = 0.0;
-
+int N = 3;
 //numerador y denominador del filtro IIR pasabajo de 40Hz:
 //const float num[N] = {0.5, 0.2, 0.15, 0.1, 0.05};
 // const float num[N] = {0.0001832160, 0.0007328641, 0.0010992961, 0.0007328641, 0.0001832160};
@@ -60,15 +60,15 @@ PID myPID(&entrada, &salida, &setpoint, Kp, Ki, Kd, P_ON_E, DIRECT);
 
 float filtroFIR()
 {
-	int N = 3; //cantidad de puntos
+	int N = 3; //cantidad de puntos	
 	int k;
-	static float ent[N] = {analogRead(A1)}; //inicializa arreglo en el primer valor del pote
+	static float ent[3] = {analogRead(A1)}; //inicializa arreglo en el primer valor del pote
 	float out = 0;
 	for (k = 1; k < N; k++)
 	{
 		ent[k - 1] = ent[k]; //desplaza los valores
 	}
-	ent[N - 1] = analogRead(A1); //lee la nueva entrada
+	ent[N-1] = analogRead(A1); //lee la nueva entrada
 	for (k = 0; k < N; k++)
 	{
 		out = out + ent[k]; //Sumatoria de las ultimas entradas
@@ -84,7 +84,7 @@ void setup()
 	Serial.begin(115200); //Inicializa comunicación serie a 115200 bits por segundo
 
 	myPID.SetSampleTime(Ts);														//Seteo período de muestreo del PID a 1 ms
-	myPID.SetOutputLimits(-(SALIDA_MAX - ZONA_MUERTA), (SALIDA_MAX - ZONA_MUERTA)); //Seteo los límites de salida del PID (teniendo en cuenta la zona muerta del Motor)
+	myPID.SetOutputLimits(-(SALIDA_MAX), (SALIDA_MAX)); //Seteo los límites de salida del PID (teniendo en cuenta la zona muerta del Motor)
 	myPID.SetMode(AUTOMATIC);														//Inicia el PID en modo auto?
 
 	Timer1.initialize(1000);		  // configura un timer de 1 ms
@@ -94,11 +94,19 @@ void setup()
 
 void loop()
 {
+	int i;
+	static float reff[3] = {0};
 	if (bandera_control == 1) // Lazo de control
 	{
-		#pragma region sensado
-		ref = dataNumber; //lee referencia de HyperIMU ([-90,90] en este caso, actualizada en "dataNumber" cada 50ms)
+#pragma region sensado
+		for (i = 1; i < N; i++)
+		{
+			reff[i - 1] = reff[i]; //desplaza los valores
+		}
+		reff[0]=dataNumber;
+		ref = reff[N-1]; //lee referencia de HyperIMU ([-90,90] en este caso, actualizada en "dataNumber" cada 50ms)
 						  // ref= ((float)analogRead(A2)- SENSOR_MEDIO)*POT2GRAD; //Para usar otro pote de ref
+		
 		if (ref > REF_MAX)
 		{ //opcional, generalmente se utilizan fines de carrera
 			ref = REF_MAX;
@@ -107,8 +115,8 @@ void loop()
 		{
 			ref = REF_MIN;
 		}
-		pot = analogRead(A1);
-		// pot = filtroFIR();
+		// pot = analogRead(A1);
+		pot = filtroFIR();
 		sensor = ((float)pot - SENSOR_MEDIO) * POT2GRAD; //valor actual en grados
 		//se pueden agregar filtros digitales a "ref" y "sensor"
 		error = ref - sensor; //Calculo de error
@@ -145,7 +153,7 @@ void loop()
 	if (bandera_tx == 1)
 	{
 		// sprintf(buffer_tx, "%d,%d", (int)(ref * 100.0), (int)(sensor * 100.0));
-		sprintf(buffer_tx, "%d,%d,%d,%d", (int)(ref * 100.0), (int)(sensor * 100.0),(int)(salida*1000),(int)(error*100));
+		sprintf(buffer_tx, "%d,%d,%d,%d", (int)(ref * 100.0), (int)(sensor * 100.0), (int)(salida * 1000), (int)(error * 100));
 		Serial.println(buffer_tx);
 		bandera_tx = 0;
 	}
