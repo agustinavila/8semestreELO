@@ -36,3 +36,15 @@ Las alternativas son usar dos monofasicas en serie o buscar resistencias trifasi
 Respecto a las resistencias trifasicas, el problema es el circuito de control que deberia manejar 3 fases.
 Habria que detectar el cruce por cero con una interrupcion en arduino, y respecto a eso disparar cada linea por separado
 Entonces el arduino tendria una entrada del circuito detector de cruce por cero, conectada a una interrupcion, y de ahi 
+
+1 - presentacion
+1 - Calculos potencia
+2 - Eleccion resistencia
+3 - Deteccion cruce por cero (circuito)
+4 - Disparo en cada fases (diagrama de programa de disparo)
+5 - Eleccion de sensor de temp (2 sensores)
+6 - Sistema de control (diagrama de flujo)
+7 - Parte electronica - arduino, pulsadores, etc
+8 - Parte electrica - Eleccion de cables, disyuntores, etc
+9 - Presupuesto
+10 - conclusiones o algo por el estilo
