@@ -10,7 +10,22 @@ https://articulo.mercadolibre.com.ar/MLA-872784071-transmisor-sensor-de-presion-
 https://articulo.mercadolibre.com.ar/MLA-611142727-85-300g-4c-85-300g-4c-sensor-presion-300-psi-rosca-14-_JM#position=18&type=item&tracking_id=30109ce5-9093-48a9-a67d-cb3fd24b580d
 12k pesos - rango salida 0 - 100mv
 
+8k - rango 10bar - salida 4 20 mA
+WNK80MA 10BAR 4-20mA DIN G1/4
+https://articulo.mercadolibre.com.ar/MLA-875917332-transductor-de-presion-4-20-ma-rosca-14bsp-0-10bar-_JM#position=3&type=item&tracking_id=b18cdb21-fe23-4344-acc3-026a74571a50
+https://www.wnksensor.com/420ma_spi_ic_0_5v_compact_pressure_sensor_transmitter_p14992.html
 
+18k
+Xmlk025b2c71
+https://articulo.mercadolibre.com.ar/MLA-688630622-xmlk025b2c71-transductor-transmisor-de-presion-telemecanique-_JM#position=39&type=item&tracking_id=e5f7691c-fdf3-4969-895e-de6eeed17f35
+
+10k
+nagano - adz.de
+https://articulo.mercadolibre.com.ar/MLA-792342049-transductor-transmidor-de-presion-salida-4-20-ma-0-a-10-bar-_JM#position=42&type=item&tracking_id=e5f7691c-fdf3-4969-895e-de6eeed17f35
+
+16k
+
+https://articulo.mercadolibre.com.ar/MLA-752387018-transmisor-de-presion-salida-4-20-ma-celda-ceramica-_JM#position=1&type=item&tracking_id=9aa0dece-6f59-47bd-8acf-5036e24023a2
 
 sensores de caudal:
 https://www.ifm.com/ar/es/product/SA5000
@@ -35,3 +50,6 @@ salida 420ma
 90k pesos
 Las partes del equipo en contacto con el medio están hechas de Valox, PBT o PP.
 pbt es resistente al cloro aparentemente (referencia de trajes de baño?)
+
+
+https://articulo.mercadolibre.com.ar/MLA-849703422-conversor-de-corriente-de-4-20ma-a-0-5v-vin-7-30v-ard-mona-_JM#position=1&type=item&tracking_id=e812d48d-c322-4609-9d54-93617105623d
