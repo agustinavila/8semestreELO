@@ -1,5 +1,29 @@
 parcial integrador:
 
+Pasando en limpio:
+10k
+nagano - adz.de
+https://articulo.mercadolibre.com.ar/MLA-792342049-transductor-transmidor-de-presion-salida-4-20-ma-0-a-10-bar-_JM#position=42&type=item&tracking_id=e5f7691c-fdf3-4969-895e-de6eeed17f35
+
+celda de carga 50kg - 3 de estas
+https://articulo.mercadolibre.com.ar/MLA-896423119-celda-de-carga-arduino-hx711-50kg-con-amplificador-_JM#position=3&type=item&tracking_id=0be96c53-9928-45c7-a84a-83aad2646a14
+
+adc para las celdas:
+https://articulo.mercadolibre.com.ar/MLA-785752042-modulo-acondicionador-para-celda-de-carga-hx711-ard-pic-_JM#position=1&type=item&tracking_id=9e92cd6c-2a46-4aa4-a507-79f9769ab5fb
+
+Densidad del cloro: 3,214 kg/m3
+Por lo tanto un tanque con 100kg de cloro tiene un volumen de
+100/3214=0.031114*1000=31.114 litros
+Ante la duda si el tanque carga 100kg o el peso total es 100kg, se toma el peor caso,
+por lo tanto se supone un peso del tanque de unos 30kg, haciendo que el sistema total pueda llegar a 130kg
+(se toma como peor caso 150kg, por lo tanto se decide utilizar 3 celdas de 50kg)
+
+
+
+
+
+
+
 sensores de presion:
 necesitaria un transductor de presion electromecanico con salida 4 20 ma
 PX409-150GI rango 10.3 bar - salida 420
