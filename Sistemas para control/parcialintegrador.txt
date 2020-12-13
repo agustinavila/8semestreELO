@@ -28,7 +28,8 @@ Celda de carga prec PCR 50kg - 7k
 https://articulo.mercadolibre.com.ar/MLA-857223950-celdas-de-carga-prec-5-10-20-30-50-o-100-kg-pcr-_JM#reco_item_pos=1&reco_backend=machinalis-seller-items-pdp&reco_backend_type=low_level&reco_client=vip-seller_items-above&reco_id=e815de94-db35-4b54-9040-b1f8fcdda4a7
 
 
-
+(45/2)^2*pi=1590.431281
+32/1590.431281=0.02012
 
 %%%%%%%%%%%%%%% sensores de caudal:
 SA5000
