@@ -1,29 +1,64 @@
 parcial integrador:
 
 Pasando en limpio:
+
+%%%%%%%%%%%%%%% sensores de presion
 10k
 nagano - adz.de
+Sensor de presion con un rango de 0-10bar con salida 4-20mA
 https://articulo.mercadolibre.com.ar/MLA-792342049-transductor-transmidor-de-presion-salida-4-20-ma-0-a-10-bar-_JM#position=42&type=item&tracking_id=e5f7691c-fdf3-4969-895e-de6eeed17f35
 
-celda de carga 50kg - 3 de estas
-https://articulo.mercadolibre.com.ar/MLA-896423119-celda-de-carga-arduino-hx711-50kg-con-amplificador-_JM#position=3&type=item&tracking_id=0be96c53-9928-45c7-a84a-83aad2646a14
 
-adc para las celdas:
-https://articulo.mercadolibre.com.ar/MLA-785752042-modulo-acondicionador-para-celda-de-carga-hx711-ard-pic-_JM#position=1&type=item&tracking_id=9e92cd6c-2a46-4aa4-a507-79f9769ab5fb
-
-Densidad del cloro: 3,214 kg/m3
+%%%%%%%%%%%%%% celdas de carga:
+ Densidad del cloro: 3,214 kg/m3
 Por lo tanto un tanque con 100kg de cloro tiene un volumen de
-100/3214=0.031114*1000=31.114 litros
+100/3214=0.031114(m3)*1000=31.114 litros
 Ante la duda si el tanque carga 100kg o el peso total es 100kg, se toma el peor caso,
 por lo tanto se supone un peso del tanque de unos 30kg, haciendo que el sistema total pueda llegar a 130kg
 (se toma como peor caso 150kg, por lo tanto se decide utilizar 3 celdas de 50kg)
+celda de carga 50kg - 3 de estas
+https://articulo.mercadolibre.com.ar/MLA-896423119-celda-de-carga-arduino-hx711-50kg-con-amplificador-_JM#position=3&type=item&tracking_id=0be96c53-9928-45c7-a84a-83aad2646a14
+adc para las celdas:
+https://articulo.mercadolibre.com.ar/MLA-785752042-modulo-acondicionador-para-celda-de-carga-hx711-ard-pic-_JM#position=1&type=item&tracking_id=9e92cd6c-2a46-4aa4-a507-79f9769ab5fb
+
+%%%%%%%%%%%%%%% sensores de caudal:
+https://www.ifm.com/ar/es/product/SA5000
+aprox 37k - no sirve, mide hasta 6m3 por minuto y necesito 10
+Katflow 100 - precio????
+salida 420, 485, modbus
+https://www.dastecsrl.com.ar/productos/caudal-3/ultrasonicos-tipo-clamp-on-sin-contacto/katflow-100-transmisor-de-flujo-ultrasonico-fijo-tipo-clamp-on-de-bajo-costo
+
+siemens sitrans 3100 
+https://www.dastecsrl.com.ar/productos/caudal-3/electromagneticos/sitrans-mag-3100-siemens-sensor-de-caudal-electromagnetico
+
+rosemount
+https://www.emerson.com/es-es/catalog/rosemount-sku-8705080-es-es?fetchFacets=true#facet:&partsFacet:&facetLimit:&productBeginIndex:0&partsBeginIndex:0&orderBy:&partsOrderBy:&pageView:list&minPrice:&maxPrice:&pageSize:&
+
+
+10000/60=166.666667	-> litros por segundo	
+8*2.54=20 -> 200mm caño -> DN200
+velocidad: 166.6667/(pi*(4*2.54)^2)=0.513939*10=5.13939 m/s
+
+Resumiendo, datos tecnicos:
+DN -> 200
+PN -> 10 o mas (aprox 10bar), preferentemente PN16
+Velocidad max -> 5,2m/s
+
+
+Es importante tener en cuenta que los sensores electromagneticos requieren
+un tramo rio arriba de 5 diametros, y rio abajo de 3 diametros del tubo.
+
+tramo rio arriba = 5*8*.0254=1.016m
+tramo rio abajo = 3*8*.0254=0.6096m
+
+Por lo 
 
 
 
 
 
-
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+10000/1933=5.173306
 sensores de presion:
 necesitaria un transductor de presion electromecanico con salida 4 20 ma
 PX409-150GI rango 10.3 bar - salida 420
@@ -51,9 +86,7 @@ https://articulo.mercadolibre.com.ar/MLA-792342049-transductor-transmidor-de-pre
 
 https://articulo.mercadolibre.com.ar/MLA-752387018-transmisor-de-presion-salida-4-20-ma-celda-ceramica-_JM#position=1&type=item&tracking_id=9aa0dece-6f59-47bd-8acf-5036e24023a2
 
-sensores de caudal:
-https://www.ifm.com/ar/es/product/SA5000
-aprox 37k
+
 
 
 
