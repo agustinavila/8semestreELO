@@ -3,3 +3,6 @@ Pensaba realizar como medicion no estandar un sistema para prediccion de heladas
 Todo eso alimentado con un pequeño panel solar y una pequeña bateria. La idea seria utilizar modulos LoRaWAN que son de bajo consumo y un largo alcance, pensando que en el agro las distancias suelen ser considerables. Y como comunicacion utilizaria el protocolo MQTT, con una RPI como broker.
 Esto le permitiria ser escalable facilmente para cubrir grandes superficies.
 La duda que tengo es que no se que tan factible o preciso es el calculo de posibilidades de heladas para alertar a los operarios para que realicen acciones preventivas, pero en caso de no ser factible podria ser util tambien para medir eficiencia en los riegos midiendo la humedad de la tierra en distintos puntos, e incluso para prevenir hongos o bacterias que afectan en epoca de cosecha cuando hay mucha concentracion de humedad y altas temperaturas. Quisiera saber si esta bien como proyecto
+
+anemometro
+https://articulo.mercadolibre.com.ar/MLA-899020238-anemometro-wallis-gill-ak3-_JM#position=7&type=item&tracking_id=2ae70cd7-1cee-494c-bba3-f933788255d9
