@@ -17,3 +17,6 @@ https://articulo.mercadolibre.com.ar/MLA-751157443-lora-sx1278-antena-6dbi-pigta
 https://articulo.mercadolibre.com.ar/MLA-627776021-ds18b20-sensor-de-temperatura-sumergible-arduino-todomicro-_JM#position=2&type=item&tracking_id=09a34775-231a-4404-83bb-ff9ae5d95454
 https://articulo.mercadolibre.com.ar/MLA-899020238-anemometro-wallis-gill-ak3-_JM#position=5&type=item&tracking_id=e987c7a3-57f4-4b8c-9fb4-3cfed6fa0b44
 https://www.mdpi.com/1424-8220/16/8/1292/htm
+https://articulo.mercadolibre.com.ar/MLA-711589561-sensor-de-humedad-y-temperatura-sht30-arduino-raspberry-mona-_JM#position=42&type=item&tracking_id=3b48db28-567c-401e-a5b2-165ab55ac7cc
+https://articulo.mercadolibre.com.ar/MLA-811938246-gy-sht31-d-sensor-digital-temperatura-y-humedad-relativa-gy-sht30-d-sht31-i2c-mc34063a-a0202-_JM#position=45&type=item&tracking_id=6c549259-d752-4b8b-8f43-d67c409ca1ec
+https://articulo.mercadolibre.com.ar/MLA-755226528-sensor-capacitivo-analogico-humedad-suelo-v12-itytarg-_JM#position=12&type=item&tracking_id=d9db7bc5-f89b-4c39-8373-bab53862abb3
