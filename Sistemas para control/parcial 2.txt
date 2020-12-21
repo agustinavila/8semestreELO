@@ -6,3 +6,14 @@ La duda que tengo es que no se que tan factible o preciso es el calculo de posib
 
 anemometro
 https://articulo.mercadolibre.com.ar/MLA-899020238-anemometro-wallis-gill-ak3-_JM#position=7&type=item&tracking_id=2ae70cd7-1cee-494c-bba3-f933788255d9
+
+chirpstack
+https://articulo.mercadolibre.com.ar/MLA-659186017-panel-solar-5v-220ma-arduino-_JM#position=1&type=item&tracking_id=90331001-353e-4a3d-bf17-b372d3c96daa
+
+https://articulo.mercadolibre.com.ar/MLA-658279280-power-bank-20000-mah-cargador-celular-usb-bateria-recargable-_JM?searchVariation=62374781602#searchVariation=62374781602&position=1&type=item&tracking_id=c0ea96b2-5b54-411b-9782-94e216320963
+https://articulo.mercadolibre.com.ar/MLA-750364028-fuente-switching-metalica-5v-5a-25w-pixel-led-_JM#position=1&type=item&tracking_id=589451ff-4cea-4647-b2b4-18d11f70932f
+
+https://articulo.mercadolibre.com.ar/MLA-751157443-lora-sx1278-antena-6dbi-pigtale-arudino-pic-_JM
+https://articulo.mercadolibre.com.ar/MLA-627776021-ds18b20-sensor-de-temperatura-sumergible-arduino-todomicro-_JM#position=2&type=item&tracking_id=09a34775-231a-4404-83bb-ff9ae5d95454
+https://articulo.mercadolibre.com.ar/MLA-899020238-anemometro-wallis-gill-ak3-_JM#position=5&type=item&tracking_id=e987c7a3-57f4-4b8c-9fb4-3cfed6fa0b44
+https://www.mdpi.com/1424-8220/16/8/1292/htm
