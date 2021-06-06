@@ -64,10 +64,16 @@ El sistema posee las siguientes interfaces:
 2. 4 interruptores de entrada de zonas de censado
 3. 1 display lcd.
 
+Cabe aclarar que el codigo no está muy prolijo, ya que se tuvo que corregir bugs dentro del laboratorio, y no hubo margen para hacerlo prolijo. Luego no se corrigio, ya que es extremadamente complicado interpretar un codigo en assembler que no este perfectamente documentado.
+
 ### Funcionamiento del sistema
 
 Con el teclado se ingresa la clave (cuatro digitos) para activar y desactivar la alarma. Al estar activada se debe monitorear las zonas. Por display LCD se debe mostrar los estados de la alarma: "Act", "Desact" y "Zona X act". Las direcciones de los dispositivos seran asignadas de acuerdo a la siguiente tabla:
 
-- Teclado ->	Teclado (in 82h)
+- Teclado ->Teclado (in 82h)
 - Interruptores de sensores de zona -> puerta 84H, bits 3-0
 - Buzzer -> Puerta B (de un 8155)
+
+## Laboratorio 2
+
+Se realizo una implementación en el microcontrolador 8051 utilizando C.

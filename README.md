@@ -1,6 +1,6 @@
 # 8semestreELO
 
-Trabajos realizados en el octavo semestre de Ingenieria Electronica de la FI UNSJ.
+Trabajos realizados en el octavo semestre de Ingenieria Electronica de la FI UNSJ. A continuacion se listan las distintas materias con una breve descripcion del contenido de cada una.
 
 ## Sistemas para control
 
@@ -8,11 +8,11 @@ En esta materia realizamos algunas implementaciones de controladores utilizando 
 
 ## Telecomunicaciones 2
 
-asdasd
+Se encuentra el codigo e informes de las dos prácticas realizadas en la materia, la de control de error / transmision / codificacion, y la de filtro adaptado / diagrama de ojo, que hubo que regenerar desde el archivo de la catedra ya que su modelo de simulink presentaba muchisimos errores.
 
 ## Electronica de potencia
 
-Asdasd
+En esta carpeta no hay muchas cosas realizadas ya que no tuvimos muchas practicas, y subir los apuntes no tiene mucho sentido. Si hay una o dos practicas de control de potencia que realizamos, y un informe de un controlador de temperatura para un calentador de agua.
 
 ## Digital 3
 
